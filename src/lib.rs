@@ -32,9 +32,9 @@ impl Default for ImageBoard{
     fn default() -> Self {
         let owner = env::predecessor_account_id();
         Self { 
-            threads: Vector::new(b"5"), 
+            threads: Vector::new(b"i"), 
             owner, 
-            moderators: Vector::new(b"1"),
+            moderators: Vector::new(b"m"),
         
         }
     }

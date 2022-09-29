@@ -4,7 +4,7 @@ use near_sdk::{near_bindgen, AccountId, env};
 
 
 #[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct Thread {
     pub author: AccountId,
     pub text: String,
@@ -40,6 +40,7 @@ impl Default for ImageBoard{
     }
 }
 
+
 #[near_bindgen]
 impl ImageBoard{
     pub fn add_thread(&mut self, text: String) {
@@ -51,8 +52,8 @@ impl ImageBoard{
         self.threads.push(&message);
     }
 
-    pub fn get_threads(&self) -> Vector<Thread> {
-        self.threads
+    pub fn get_threads(&self) -> Vec<Thread> {
+        self.threads.iter().take(50 as usize).collect()
     }
 }
 
@@ -64,9 +65,10 @@ mod tests {
     
     #[test]
     fn add_thread() {
-        let mut contract = Thread::default();
+        let mut contract = ImageBoard::default();
         contract.add_thread("there are all dead".to_string());
-        let thread = &contract.get_threads();
+        let thread = &contract.get_threads()[0];
+        
         assert_eq!(thread.text, "there are all dead".to_string())
     }
 }

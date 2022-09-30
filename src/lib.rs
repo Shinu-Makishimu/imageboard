@@ -1,29 +1,23 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{Vector, UnorderedMap};
-//use near_sdk::serde::{Serialize, Deserialize};
+use near_sdk::collections::{Vector, UnorderedMap, UnorderedSet};
+use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::{near_bindgen, AccountId, env};
 
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
-#[derive(Debug)]
+//#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
 pub struct Thread {
     pub author: AccountId,
     pub text: String,
     pub is_closed: bool,
-//    pub answers: Vector<Answers>,
 }
-/*
-pub struct Answers {
-    pub posts: 
-}
-*/
-
 
 
 #[near_bindgen]
-//#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, PartialEq)]
-#[derive(BorshDeserialize, BorshSerialize,)]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
+//#[derive(BorshDeserialize, BorshSerialize,)]
 //#[serde(crate = "near_sdk::serde")]
 pub struct ImageBoard {
     threads: UnorderedMap<i32, Thread>,
@@ -58,7 +52,11 @@ impl ImageBoard{
         self.threads_count += 1;
         let threads_count = self.threads_count;
 
-        let message = Thread{author, text, is_closed};
+        let message = Thread{
+            author, 
+            text, 
+            is_closed,
+        };
 
         self.threads.insert(&threads_count, &message);
     }

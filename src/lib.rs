@@ -1,24 +1,34 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{Vector, UnorderedMap, UnorderedSet};
+use near_sdk::collections::{Vector, UnorderedMap, LookupMap};
 use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::{near_bindgen, AccountId, env};
 
 
 #[near_bindgen]
-//#[derive(BorshDeserialize, BorshSerialize)]
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Thread {
     pub author: AccountId,
     pub text: String,
     pub is_closed: bool,
+    pub answers: Answers,
 }
-
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, Debug)]
-//#[derive(BorshDeserialize, BorshSerialize,)]
-//#[serde(crate = "near_sdk::serde")]
+pub struct Answers {
+    answers: LookupMap<i32, String>
+}
+
+impl Default for Answers {
+    fn default() -> Self{
+        Self{answers: LookupMap::new(b"m")}
+
+    }
+}
+
+#[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub struct ImageBoard {
     threads: UnorderedMap<i32, Thread>,
     owner: AccountId,
@@ -51,21 +61,31 @@ impl ImageBoard{
         let author = env::predecessor_account_id();
         self.threads_count += 1;
         let threads_count = self.threads_count;
+        let answers = Answers::default();
 
         let message = Thread{
             author, 
             text, 
             is_closed,
+            answers,
         };
 
         self.threads.insert(&threads_count, &message);
     }
-
+ 
     pub fn get_threads(&self) -> Vec<(i32, Thread)> {
         self.threads.to_vec()     
     }
 
-    pub fn add_moder(){
+
+    pub fn add_moder(&mut self, user_id: AccountId){
+        self.moderators.push(&user_id);
+
+    }
+
+    pub fn delete_moder(&mut self, user_id:AccountId) {
+        let index = self.moderators.iter().position(|x| &x.as_str() == &user_id.as_str()).unwrap();
+        self.moderators.swap_remove(index as u64);
 
     }
 }

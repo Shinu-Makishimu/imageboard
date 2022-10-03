@@ -1,30 +1,15 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{Vector, UnorderedMap, LookupMap};
-use near_sdk::serde::{Serialize, Deserialize};
+use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::{near_bindgen, AccountId, env};
 
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, PartialEq)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
 pub struct Thread {
     pub author: AccountId,
     pub text: String,
     pub is_closed: bool,
-    pub answers: Answers,
-}
-
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
-pub struct Answers {
-    answers: LookupMap<i32, String>
-}
-
-impl Default for Answers {
-    fn default() -> Self{
-        Self{answers: LookupMap::new(b"m")}
-
-    }
+    pub answers: UnorderedMap<i32, String>,
 }
 
 #[near_bindgen]
@@ -53,7 +38,6 @@ impl Default for ImageBoard{
 }
 
 
-
 #[near_bindgen]
 impl ImageBoard{
     pub fn add_thread(&mut self, text: String) {
@@ -61,7 +45,17 @@ impl ImageBoard{
         let author = env::predecessor_account_id();
         self.threads_count += 1;
         let threads_count = self.threads_count;
-        let answers = Answers::default();
+
+        if self.threads.len() == 500 {
+            let mut vector_key = self.threads.keys_as_vector().to_vec();
+            vector_key.sort();
+            let key = vector_key.first().unwrap();
+            self.remove_thread(&key);
+
+        }
+
+
+        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"m");
 
         let message = Thread{
             author, 
@@ -75,6 +69,17 @@ impl ImageBoard{
  
     pub fn get_threads(&self) -> Vec<(i32, Thread)> {
         self.threads.to_vec()     
+    }
+
+    pub fn remove_thread(&mut self, key: &i32) {
+        self.threads.remove(&key);
+
+    }
+
+    pub fn ban_thread(&self, number: i32) {
+        let mut thread = self.threads.get(&number).unwrap();
+        thread.is_closed = true
+
     }
 
 
@@ -91,6 +96,28 @@ impl ImageBoard{
 }
 
 
+
+impl Thread {
+    pub fn add_answers(&mut self, text: String) -> String {
+        if self.is_closed {
+            return "thread is closed".to_string();
+        }
+
+        let mut count = self.answers.len() as i32;
+        if count == 0 {
+            self.answers.insert(&1,&text);
+            return "succes".to_string();
+        } else if count == 500 {
+            return "thread is closed".to_string();
+        } else {
+            count +=1;
+            self.answers.insert(&count, &text);
+            return "succes".to_string();
+        }
+
+    }
+
+}
 
 
 #[cfg(test)]

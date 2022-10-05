@@ -2,13 +2,13 @@
 name = "imageboard"
 version = "0.1.0"
 authors = ["MS"]
-edition = "2021"
+edition = "2018"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "4.0.0-pre.4"
+near-sdk = { git = "https://github.com/near/near-sdk-rs", tag = "4.0.0"}
 
 [profile.release]
 codegen-units = 1
@@ -19,3 +19,9 @@ debug = false
 panic = "abort"
 # Opt into extra safety checks on arithmetic operations https://stackoverflow.com/a/64136471/249801
 overflow-checks = true
+
+
+[dev-dependencies]
+workspaces =  {git = "https://github.com/near/workspaces-rs", tag = "0.5.0"}
+serde = "1.0"
+serde_with = "1"

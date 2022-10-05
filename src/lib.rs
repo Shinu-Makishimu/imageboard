@@ -1,7 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::{near_bindgen, AccountId, env};
-use serde::de::Error;
 
 
 #[near_bindgen]
@@ -40,6 +39,7 @@ impl Default for ImageBoard{
 
 #[near_bindgen]
 impl ImageBoard{
+
     #[init]
     pub fn new_default() -> Self {
         Self::default()
@@ -62,22 +62,24 @@ impl ImageBoard{
         self.threads_count += 1;
         let threads_count = self.threads_count;
 
-        if self.threads.len() == 500 {
-            let key = (threads_count -500);
-            self.remove_thread(&key);
+        match self.threads.len() {
+            500 => {
+                let key = threads_count - 500;
+                self.remove_thread(&key);
+            },
+            _=> {let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
+
+                let message = Thread{
+                    author, 
+                    text, 
+                    is_closed,
+                    answers,
+                };
+    
+                self.threads.insert(&threads_count, &message);
+            },
         }
-
-
-        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
-
-        let message = Thread{
-            author, 
-            text, 
-            is_closed,
-            answers,
-        };
-
-        self.threads.insert(&threads_count, &message);
+        
     }
  
     pub fn get_threads(&self) -> Vec<(i32, Thread)> {
@@ -102,21 +104,38 @@ impl ImageBoard{
     }
 
     pub fn delete_moder(&mut self, user_id:AccountId) {
-        let index = self.moderators.iter().position(|x| x.as_str() == user_id.as_str()).unwrap();
+        let index = self.moderators
+            .iter()
+            .position(|x| x.as_str() == user_id.as_str())
+            .unwrap();
+            
         self.moderators.swap_remove(index as u64);
 
     }
 
     pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
-        let thread =  self.threads.get(&thread_number).unwrap();
+        let mut thread =  self.threads.get(&thread_number).unwrap();
         if thread.is_closed {
             "thread is closed".to_string();
         }
-        let mut count = thread.answers.len();
+        let mut count = thread.answers.len() as i32;
+
         match count {
-            0 => {thread.answers.insert(1, text); "succes".to_string() },
-            500 => {"thread is closed".to_string()},
-            _ => {thread.answers.insert(count + 1, text); }
+            0 => {
+                count = 1;
+                thread.answers.insert(&count, &text); 
+                "succes".to_string() 
+            },
+            500 => {
+                "thread is closed".to_string()
+            },
+            _ => {
+                count += 1;
+                thread.answers.insert(&count, &text); 
+                "succes".to_string()
+            },
+        }
+    }
 }
 
 

@@ -81,7 +81,8 @@ impl ImageBoard{
         }
         
     }
- 
+    
+    #[result_serializer(borsh)]
     pub fn get_threads(&self) -> Vec<(i32, Thread)> {
         self.threads.to_vec()     
     }

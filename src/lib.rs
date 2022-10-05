@@ -1,10 +1,11 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::{near_bindgen, AccountId, env};
+use serde::de::Error;
 
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct Thread {
     pub author: AccountId,
     pub text: String,
@@ -13,7 +14,7 @@ pub struct Thread {
 }
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct ImageBoard {
     threads: UnorderedMap<i32, Thread>,
     owner: AccountId,
@@ -26,12 +27,11 @@ pub struct ImageBoard {
 impl Default for ImageBoard{
     fn default() -> Self {
         let owner = env::predecessor_account_id();
-        let threads_count: i32 = 0;
         Self { 
-            threads: UnorderedMap::new(b"s"), 
+            threads: UnorderedMap::new(b"threads".to_vec()), 
             owner, 
-            moderators: Vector::new(b"m"),
-            threads_count,
+            moderators: Vector::new(b"moderators".to_vec()),
+            threads_count: 0,
         
         }
     }
@@ -40,6 +40,22 @@ impl Default for ImageBoard{
 
 #[near_bindgen]
 impl ImageBoard{
+    #[init]
+    pub fn new_default() -> Self {
+        Self::default()
+    }
+
+    #[init]
+    pub fn new(owner: AccountId) -> Self {
+        Self { 
+            threads: UnorderedMap::new(b"threads".to_vec()), 
+            owner, 
+            moderators: Vector::new(b"moderators".to_vec()),
+            threads_count: 0,
+        }
+    }
+
+
     pub fn add_thread(&mut self, text: String) {
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
@@ -47,15 +63,12 @@ impl ImageBoard{
         let threads_count = self.threads_count;
 
         if self.threads.len() == 500 {
-            let mut vector_key = self.threads.keys_as_vector().to_vec();
-            vector_key.sort();
-            let key = vector_key.first().unwrap();
+            let key = (threads_count -500);
             self.remove_thread(&key);
-
         }
 
 
-        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"m");
+        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
 
         let message = Thread{
             author, 
@@ -89,34 +102,21 @@ impl ImageBoard{
     }
 
     pub fn delete_moder(&mut self, user_id:AccountId) {
-        let index = self.moderators.iter().position(|x| &x.as_str() == &user_id.as_str()).unwrap();
+        let index = self.moderators.iter().position(|x| x.as_str() == user_id.as_str()).unwrap();
         self.moderators.swap_remove(index as u64);
 
     }
-}
 
-
-
-impl Thread {
-    pub fn add_answers(&mut self, text: String) -> String {
-        if self.is_closed {
-            return "thread is closed".to_string();
+    pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
+        let thread =  self.threads.get(&thread_number).unwrap();
+        if thread.is_closed {
+            "thread is closed".to_string();
         }
-
-        let mut count = self.answers.len() as i32;
-        if count == 0 {
-            self.answers.insert(&1,&text);
-            return "succes".to_string();
-        } else if count == 500 {
-            return "thread is closed".to_string();
-        } else {
-            count +=1;
-            self.answers.insert(&count, &text);
-            return "succes".to_string();
-        }
-
-    }
-
+        let mut count = thread.answers.len();
+        match count {
+            0 => {thread.answers.insert(1, text); "succes".to_string() },
+            500 => {"thread is closed".to_string()},
+            _ => {thread.answers.insert(count + 1, text); }
 }
 
 

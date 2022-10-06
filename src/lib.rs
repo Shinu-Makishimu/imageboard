@@ -55,13 +55,13 @@ impl ImageBoard{
         }
     }
 
-    pub fn get_owner(&self) -> AccountId {
-        self.owner.clone()
+    pub fn get_owner(&self) -> String {
+        self.owner.clone().to_string()
     }
 
     pub fn add_thread(&mut self, text: String) {
         let is_closed: bool = false;
-        let author = env::predecessor_account_id();
+        let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
         self.threads_count += 1;
         let threads_count = self.threads_count;
 
@@ -88,6 +88,10 @@ impl ImageBoard{
     #[result_serializer(borsh)]
     pub fn get_threads(&self) -> Vec<(i32, Thread)> {
         self.threads.to_vec()     
+    }
+
+    pub fn get_the_thread(&self, number: i32) -> String {
+        self.threads.get(&number).unwrap().text.clone()
     }
 
     pub fn remove_thread(&mut self, key: &i32) {

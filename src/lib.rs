@@ -55,8 +55,8 @@ impl ImageBoard{
         }
     }
 
-    pub fn get_owner(&self) -> String {
-        self.owner.clone().to_string()
+    pub fn get_owner(&self) -> AccountId {
+        self.owner.clone()
     }
 
     pub fn add_thread(&mut self, text: String) {

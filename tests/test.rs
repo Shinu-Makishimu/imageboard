@@ -1,6 +1,7 @@
-use near_sdk::log;
+use near_sdk::{log};
 //use near_units::parse_near;
 use serde_json;
+use workspaces::{AccountId, Account, Contract, Worker, network::Sandbox};
 
 
 const WASM_FILEPATH: &str = "imageboard.wasm";
@@ -10,10 +11,10 @@ const WASM_FILEPATH: &str = "imageboard.wasm";
 
 #[tokio::test]
 async fn deploy() -> anyhow::Result<()> {
-    let worker = workspaces::sandbox().await?;
-    let wasm = std::fs::read(WASM_FILEPATH).unwrap();
-    let contract = worker.dev_deploy(&wasm).await?;
-    let account = worker.dev_create_account().await?;
+    let worker: Worker<Sandbox> = workspaces::sandbox().await?;
+    let wasm: Vec<u8> = std::fs::read(WASM_FILEPATH).unwrap();
+    let contract: Contract = worker.dev_deploy(&wasm).await?;
+    let account: Account = worker.dev_create_account().await?;
 
     contract.
         call("new").
@@ -24,13 +25,18 @@ async fn deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
 
-    /*let owner_id = contract //shis shit generic error coonection to RPC
+    let owner_id: AccountId = contract 
         .call("get_owner")
         .view()
-        .await?;
-    let downer = owner_id.borsh::<String>()?;
-    let downer = contract.call("get_owner").view().await?;
-    log!("from contract: {:?}", downer);*/
+        .await?
+        .json()?;
+    
+
+    
+    log!("from contract: {:?}", owner_id);
+    log!("from account {:?}", account.id());
+
+    assert_eq!(&owner_id, account.id());
 
     contract.
         call("add_thread").
@@ -40,7 +46,7 @@ async fn deploy() -> anyhow::Result<()> {
         transact().
         await?.
         into_result()?;
-    let number = 1 as i32;
+    let number: i32 = 1 ;
     let thread = contract.
                     call("get_the_thread").
                     args_json((number,)).

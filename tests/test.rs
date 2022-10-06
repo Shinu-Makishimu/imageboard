@@ -1,4 +1,4 @@
-//use near_sdk::BlockHeight;
+use near_sdk::log;
 //use near_units::parse_near;
 use serde_json;
 
@@ -28,8 +28,8 @@ async fn deploy() -> anyhow::Result<()> {
         .call("get_owner")
         .view()
         .await?;
-    let downer = owner_id.json::<String>()?;
-    assert_eq!(account.id().to_string(), downer);
+    let downer = owner_id.borsh::<String>()?;
+    log!("from contract: {}", downer);
     Ok(())
 
 }   

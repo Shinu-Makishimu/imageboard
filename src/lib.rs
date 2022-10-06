@@ -55,6 +55,9 @@ impl ImageBoard{
         }
     }
 
+    pub fn get_owner(&self) -> AccountId {
+        self.owner.clone()
+    }
 
     pub fn add_thread(&mut self, text: String) {
         let is_closed: bool = false;

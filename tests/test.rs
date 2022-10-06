@@ -24,6 +24,12 @@ async fn deploy() -> anyhow::Result<()> {
         .await?
         .into_result()?;
 
+    let owner_id = contract
+        .call("get_owner")
+        .view()
+        .await?;
+    let downer = owner_id.json::<String>()?;
+    assert_eq!(account.id().to_string(), downer);
     Ok(())
 
 }   

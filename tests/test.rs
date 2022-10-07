@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use near_sdk::{log};
 //use near_units::parse_near;
 use serde_json;

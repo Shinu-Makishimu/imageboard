@@ -135,6 +135,7 @@ impl ImageBoard{
                 "succes".to_string() 
             },
             500 => {
+                thread.is_closed = true;
                 "thread is closed".to_string()
             },
             _ => {
@@ -144,24 +145,46 @@ impl ImageBoard{
             },
         }
     }
+
+    pub fn get_thread_answers(&self, thread_number: i32) -> Vec<String> {
+        let thread =  self.threads.get(&thread_number).unwrap();
+        thread.answers.values_as_vector().to_vec()
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
+    use near_sdk::log;
+
     use super::*;
     
     #[test]
     fn add_thread() {
         let mut contract = ImageBoard::default();
-        contract.add_thread("there are all dead".to_string());
-        contract.add_thread("there are all dead".to_string());
-        contract.add_thread("there are all dead".to_string());
+        for _ in 1..6 {
+            contract.add_thread("there are all dead".to_string());
+            log!("shit {:?}", contract.get_threads().len());            
+        }
 
-        let thread = &contract.get_threads()[2];
+        /*contract.add_thread("there are all dead".to_string());
+        contract.add_thread("there are all dead".to_string());*/
+        let threads = &contract.get_threads();
+
+        /*let thread = &contract.get_threads()[2];
         let (key, sample) = thread;
-        let one = 3;
+        let one: i32 = 3;
+        log!("count threads = {:?}", threads.len());
         assert_eq!(key, &one);
-        assert_eq!(sample.text, "there are all dead".to_string());
+        assert_eq!(sample.text, "there are all dead".to_string());*/
+        log!("count threads = {:?}", threads.len());
+        assert_eq!(5, threads.len());
+
+        let thread = contract.get_the_thread(4);
+        log!("thread  = {:?}", thread);
+        assert_eq!(thread, "there are all dead".to_string());
+
+
+
     }
 }

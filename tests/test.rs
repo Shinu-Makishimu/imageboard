@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 use near_sdk::{log};
 //use near_units::parse_near;
 use serde_json;
 use workspaces::{AccountId, Account, Contract, Worker, network::Sandbox};
+
+mod common;
 
 
 const WASM_FILEPATH: &str = "imageboard.wasm";
@@ -38,14 +42,18 @@ async fn deploy() -> anyhow::Result<()> {
 
     assert_eq!(&owner_id, account.id());
 
+    let random_string: String = common::generate_random_string();
+
     contract.
         call("add_thread").
         args_json(serde_json::json!({
-            "text": "we are all gonna die!".to_string()
+            "text": random_string
         })).
         transact().
         await?.
         into_result()?;
+
+    
     let number: i32 = 1 ;
     let thread = contract.
                     call("get_the_thread").
@@ -54,9 +62,59 @@ async fn deploy() -> anyhow::Result<()> {
                     await?;
     log!("from contract: {:?}", thread.json::<String>()?);
 
-    assert_eq!("we are all gonna die!".to_string(), thread.json::<String>()?);
+    assert_eq!(random_string, thread.json::<String>()?);
 
+    for _ in 0..5 {
+        contract.
+            call("add_thread").
+            args_json(serde_json::json!({
+                "text": common::generate_random_string()
+            })).
+            transact().
+            await?.
+            into_result()?;
 
+    }
+    /*contract.
+            call("add_thread").
+            args_json(serde_json::json!({
+                "text": common::generate_random_string()
+            })).
+            transact().
+            await?.
+            into_result()?;
+    contract.
+            call("add_thread").
+            args_json(serde_json::json!({
+                "text": common::generate_random_string()
+            })).
+            transact().
+            await?.
+            into_result()?;
+
+    contract.
+            call("add_thread").
+            args_json(serde_json::json!({
+                "text": common::generate_random_string()
+            })).
+            transact().
+            await?.
+            into_result()?;
+    contract.
+            call("add_thread").
+            args_json(serde_json::json!({
+                "text": common::generate_random_string()
+            })).
+            transact().
+            await?.
+            into_result()?;*/
+    /*let threads: HashMap<i32, String> = contract.
+                    call("get_threads_h").
+                    view().
+                    await?.
+                    json()?;
+    
+    log!("vector threads: {:?}", threads.len());*/
 
     Ok(())
 }   

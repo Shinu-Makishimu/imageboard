@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
-use near_sdk::{near_bindgen, AccountId, env};
+use near_sdk::{near_bindgen, AccountId, env, log};
 
 
 #[near_bindgen]
@@ -62,27 +62,29 @@ impl ImageBoard{
     pub fn add_thread(&mut self, text: String) {
         let is_closed: bool = false;
         let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
-        self.threads_count += 1;
-        let threads_count = self.threads_count;
 
-        match self.threads.len() {
-            500 => {
-                let key = threads_count - 500;
-                self.remove_thread(&key);
-            },
-            _=> {let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
+        if self.threads.len() > 500 {
+            let key: i32 = self.threads_count - 500;
+            self.remove_thread(&key);
 
-                let message = Thread{
+        }
+
+        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
+
+        let message = Thread{
                     author, 
                     text, 
                     is_closed,
                     answers,
                 };
-    
-                self.threads.insert(&threads_count, &message);
-            },
-        }
+        self.threads_count += 1;
         
+        self.threads.insert(&self.threads_count, &message);
+        
+    }
+        
+    pub fn get_count(&self) -> i32 {
+        self.threads_count
     }
     
     #[result_serializer(borsh)]
@@ -123,26 +125,34 @@ impl ImageBoard{
 
     pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
         let mut thread =  self.threads.get(&thread_number).unwrap();
+        log!("answ cont {:?}", thread.answers.len());
         if thread.is_closed {
-            "thread is closed".to_string();
-        }
-        let mut count = thread.answers.len() as i32;
+            "thread is closed".to_string()
+        } else {
+            let mut count = thread.answers.len() as i32;
 
-        match count {
-            0 => {
-                count = 1;
-                thread.answers.insert(&count, &text); 
-                "succes".to_string() 
-            },
-            500 => {
-                thread.is_closed = true;
-                "thread is closed".to_string()
-            },
-            _ => {
-                count += 1;
-                thread.answers.insert(&count, &text); 
-                "succes".to_string()
-            },
+            match count {
+                0 => {
+                    log!("zero calls");
+                    count = 1;
+                    thread.answers.insert(&count, &text); 
+                    "first post".to_string()
+
+
+                },
+                500 => {
+                    thread.is_closed = true;
+                    "thread is closed".to_string()
+
+                },
+                _ => {
+                    log!("normal call");
+                    count += 1;
+                    thread.answers.insert(&count, &text); 
+                    "succes".to_string()
+
+                },
+            }
         }
     }
 
@@ -152,7 +162,7 @@ impl ImageBoard{
     }
 }
 
-
+/*
 #[cfg(test)]
 mod tests {
     use near_sdk::log;
@@ -162,29 +172,41 @@ mod tests {
     #[test]
     fn add_thread() {
         let mut contract = ImageBoard::default();
-        for _ in 1..6 {
+        for _ in 1..100 {
             contract.add_thread("there are all dead".to_string());
-            log!("shit {:?}", contract.get_threads().len());            
+          
+
         }
+        log!("total threads {:?}", contract.get_threads().len()); 
+        log!("count{:?}", contract.get_count());   
 
-        /*contract.add_thread("there are all dead".to_string());
-        contract.add_thread("there are all dead".to_string());*/
-        let threads = &contract.get_threads();
-
-        /*let thread = &contract.get_threads()[2];
-        let (key, sample) = thread;
-        let one: i32 = 3;
-        log!("count threads = {:?}", threads.len());
-        assert_eq!(key, &one);
-        assert_eq!(sample.text, "there are all dead".to_string());*/
-        log!("count threads = {:?}", threads.len());
-        assert_eq!(5, threads.len());
+        assert_eq!(99, contract.get_threads().len());
 
         let thread = contract.get_the_thread(4);
-        log!("thread  = {:?}", thread);
+
+        log!("thread numb 4 for check  = {:?}", thread);
         assert_eq!(thread, "there are all dead".to_string());
+        log!("add first answer");
+        contract.add_answers(4, "PTN PNX".to_string());
+        log!("get answ  = {:?}", contract.get_thread_answers(4));
+        
+        let thread = contract.get_the_thread(4);
+
+        log!("thread numb 4 for check  = {:?}", thread);
+        
+        
+        log!("add second answer");
+
+        //contract.add_answers(4, "+15".to_string());
+        /*contract.add_answers(4, "laht sasat".to_string());*/
+
+        //let answ = contract.get_thread_answers(4);
+        //log!("answers  = {:?}", answ);
+
+
 
 
 
     }
 }
+*/

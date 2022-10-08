@@ -134,7 +134,6 @@ impl ImageBoard{
             match count {
                 0 => {
                     log!("zero calls");
-                    count = 1;
                     thread.answers.insert(&count, &text); 
                     "first post".to_string()
 

@@ -19,6 +19,7 @@ pub struct ImageBoard {
     owner: AccountId,
     moderators: Vector<AccountId>,
     threads_count: i32,
+    bans: Vector<AccountId>,
 
 }
 
@@ -31,6 +32,7 @@ impl Default for ImageBoard{
             owner, 
             moderators: Vector::new(b"moderators".to_vec()),
             threads_count: 0,
+            bans: Vector::new(b"bans".to_vec()),
         
         }
     }
@@ -52,6 +54,7 @@ impl ImageBoard{
             owner, 
             moderators: Vector::new(b"moderators".to_vec()),
             threads_count: 0,
+            bans: Vector::new(b"bans".to_vec()),
         }
     }
 
@@ -101,9 +104,10 @@ impl ImageBoard{
 
     }
 
-    pub fn ban_thread(&self, number: i32) {
+    pub fn ban_thread(&mut self, number: i32) {
         let mut thread = self.threads.get(&number).unwrap();
-        thread.is_closed = true
+        thread.is_closed = true;
+        self.threads.insert(&number, &thread);
 
     }
 
@@ -111,6 +115,16 @@ impl ImageBoard{
     pub fn add_moder(&mut self, user_id: AccountId){
         self.moderators.push(&user_id);
 
+    }
+
+    pub fn is_moder(&self, name: AccountId) -> String {
+        if self.moderators.iter().any(|x| x.to_string() == name.to_string()) {
+            "moder".to_string()
+        } else {
+            "not_moder".to_string()
+            
+        }
+        
     }
 
     pub fn delete_moder(&mut self, user_id:AccountId) {
@@ -135,12 +149,16 @@ impl ImageBoard{
                 0 => {
                     log!("zero calls");
                     thread.answers.insert(&count, &text); 
+                    self.threads.insert(&thread_number, &thread);
+
                     "first post".to_string()
 
 
                 },
                 500 => {
                     thread.is_closed = true;
+                    self.threads.insert(&thread_number, &thread);
+
                     "thread is closed".to_string()
 
                 },
@@ -148,16 +166,44 @@ impl ImageBoard{
                     log!("normal call");
                     count += 1;
                     thread.answers.insert(&count, &text); 
+                    self.threads.insert(&thread_number, &thread);
+
                     "succes".to_string()
 
                 },
+            
             }
         }
     }
 
+
+    #[result_serializer(borsh)]
     pub fn get_thread_answers(&self, thread_number: i32) -> Vec<String> {
+        
         let thread =  self.threads.get(&thread_number).unwrap();
+        log!("answ {:?} ",thread.answers.values_as_vector().to_vec());
         thread.answers.values_as_vector().to_vec()
+    }
+
+
+    pub fn ban(&mut self, user: AccountId) {
+        self.bans.push(&user);
+    }
+
+    pub fn is_banned(&self, name: AccountId) -> String {
+        if self.bans.iter().any(|x| x.to_string() == name.to_string()) {
+            "banned".to_string()
+        } else {
+            "not_banned".to_string()
+        }
+    }
+
+    pub fn remove_ban (&mut self, user: AccountId) {
+        let index: usize = self.bans
+            .iter()
+            .position(|x| x.to_string() == user.to_string())
+            .unwrap();
+        self.bans.swap_remove(index as u64);
     }
 }
 

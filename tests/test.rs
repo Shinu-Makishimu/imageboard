@@ -1,9 +1,7 @@
-use std::vec;
-
 use near_sdk::{log};
 //use near_units::parse_near;
 use serde_json;
-use workspaces::{AccountId, Account, Contract, Worker, network::Sandbox, result::ExecutionResult};
+use workspaces::{AccountId, Account, Contract, Worker, network::Sandbox};
 
 mod common;
 
@@ -26,13 +24,8 @@ async fn deploy() -> anyhow::Result<()> {
                                 await?.
                                 into_result()?;
 
-    let subaccount2: Account = account.
-                                create_subaccount("lahtabot2").
-                                transact().
-                                await?.
-                                into_result()?;
 
-    let _subaccount2: Account = account.
+    let subaccount2: Account = account.
                                 create_subaccount("anon").
                                 transact().
                                 await?.
@@ -119,6 +112,7 @@ async fn deploy() -> anyhow::Result<()> {
                             view().
                             await?.
                             json()?;
+    log!("all threads: {:?}", all_threads);
 
 //////////////////////////////////////////////////////
 
@@ -171,6 +165,14 @@ log!("from thread answ = {:?}", answer);
             transact().
             await?.
             into_result()?;
+    let list_bans: Vec<String> = contract.
+                        call("get_bans").
+                        view().
+                        await?.
+                        json()?;
+    
+    log!("account {:?}", subaccount.id().to_string());
+    log!("list_bans: {:?}", list_bans);
     
     let ban_check: String = contract.
                         call("is_banned").
@@ -181,19 +183,8 @@ log!("from thread answ = {:?}", answer);
                         await?.
                         json()?;
 
-    let ban_check2: String = contract.
-                        call("is_banned").
-                        args_json(serde_json::json!({
-                                "name": subaccount2.id()
-                        })).
-                        view().
-                        await?.
-                        json()?;
-
-
-
+    
     log!("Banned1? {:?}", ban_check);
-    log!("Banned2? {:?}", ban_check2);
 
     contract.
         call("remove_ban").
@@ -203,17 +194,32 @@ log!("from thread answ = {:?}", answer);
         transact().
         await?.
         into_result()?;
-    log!("Banned1? {:?}", ban_check);
+
+    let list_bans: Vec<String> = contract.
+                        call("get_bans").
+                        view().
+                        await?.
+                        json()?;
+    
+    log!("list_bans: {:?}", list_bans);
     
     
-    /*contract.
+    contract.
         call("add_moder").
         args_json(serde_json::json!({
-            "user_id": subaccount.id(),
+            "user_id": subaccount2.id(),
         })).
         transact().
         await?.
-        into_result()?;*/
+        into_result()?;
+
+    let list_mods: Vec<String> = contract.
+        call("get_moders").
+        view().
+        await?.
+        json()?;
+
+    log!("list_bans: {:?}", list_mods);    
 
     Ok(())
 

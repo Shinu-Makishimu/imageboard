@@ -90,7 +90,6 @@ impl ImageBoard{
         self.threads_count
     }
     
-    #[result_serializer(borsh)]
     pub fn get_threads(&self) -> Vec<(i32, String, String)> {
         let mut b: Vec<(i32, String, String)> =  vec![];
         for element in self.threads.to_vec(){
@@ -129,6 +128,10 @@ impl ImageBoard{
             
         }
         
+    }
+
+    pub fn get_moders(&self) -> Vec<String> {
+        self.moderators.iter().map(|x| x.to_string()).collect()
     }
 
     pub fn delete_moder(&mut self, user_id:AccountId) {
@@ -188,14 +191,6 @@ impl ImageBoard{
     }
 
 
-    /*#[result_serializer(borsh)]
-    pub fn get_thread_answers(&self, thread_number: i32) -> Vec<String> {
-        
-        let thread =  self.threads.get(&thread_number).unwrap();
-        log!("answ {:?} ",thread.answers.values_as_vector().to_vec());
-        thread.answers.values_as_vector().to_vec()
-    }*/
-
     pub fn get_thread_answers (&self, thread_number: i32) -> String {
         let thread: Thread = self.threads.get(&thread_number).unwrap();
 
@@ -219,6 +214,12 @@ impl ImageBoard{
             "not_banned".to_string()
         }
     }
+
+    pub fn get_bans(&self) -> Vec<String> {
+        self.bans.iter().map(|x| x.to_string()).collect()
+    
+    }
+
 
     pub fn remove_ban (&mut self, user: AccountId) {
         let index: usize = self.bans

@@ -91,8 +91,12 @@ impl ImageBoard{
     }
     
     #[result_serializer(borsh)]
-    pub fn get_threads(&self) -> Vec<(i32, Thread)> {
-        self.threads.to_vec()     
+    pub fn get_threads(&self) -> Vec<(i32, String, String)> {
+        let mut b: Vec<(i32, String, String)> =  vec![];
+        for element in self.threads.to_vec(){
+            b.push((element.0, element.1.author.to_string(), element.1.text))
+        }
+        b
     }
 
     pub fn get_the_thread(&self, number: i32) -> String {
@@ -140,8 +144,15 @@ impl ImageBoard{
     pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
         let mut thread =  self.threads.get(&thread_number).unwrap();
         log!("answ cont {:?}", thread.answers.len());
+        let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
+
         if thread.is_closed {
-            "thread is closed".to_string()
+           "thread is closed".to_string() 
+        
+        } else if self.is_banned(author) == "banned "{
+            "banned".to_string() 
+        
+        
         } else {
             let mut count = thread.answers.len() as i32;
 
@@ -177,12 +188,23 @@ impl ImageBoard{
     }
 
 
-    #[result_serializer(borsh)]
+    /*#[result_serializer(borsh)]
     pub fn get_thread_answers(&self, thread_number: i32) -> Vec<String> {
         
         let thread =  self.threads.get(&thread_number).unwrap();
         log!("answ {:?} ",thread.answers.values_as_vector().to_vec());
         thread.answers.values_as_vector().to_vec()
+    }*/
+
+    pub fn get_thread_answers (&self, thread_number: i32) -> String {
+        let thread: Thread = self.threads.get(&thread_number).unwrap();
+
+        thread.answers.
+            values_as_vector().
+            to_vec().
+            into_iter().
+            map(|mut x| {x.push_str("$"); x})
+            .collect()
     }
 
 
@@ -207,7 +229,7 @@ impl ImageBoard{
     }
 }
 
-/*
+
 #[cfg(test)]
 mod tests {
     use near_sdk::log;
@@ -242,16 +264,17 @@ mod tests {
         
         log!("add second answer");
 
-        //contract.add_answers(4, "+15".to_string());
-        /*contract.add_answers(4, "laht sasat".to_string());*/
+        contract.add_answers(4, "+15".to_string());
+        contract.add_answers(4, "lahta gtfo".to_string());
 
-        //let answ = contract.get_thread_answers(4);
-        //log!("answers  = {:?}", answ);
+        let answ = contract.get_thread_answers(4);
+        log!("answers  = {:?}", answ);
 
+        let threads = contract.get_threads();
+        log!("answers  = {:?}", threads);
 
 
 
 
     }
 }
-*/

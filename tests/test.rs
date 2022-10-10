@@ -114,7 +114,11 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("thread count: {:?}", thread_count.json::<i32>()?);
     
-
+    let all_threads:Vec<(i32, String, String)> = contract.
+                            call("get_threads").
+                            view().
+                            await?.
+                            json()?;
 
 //////////////////////////////////////////////////////
 
@@ -132,7 +136,7 @@ async fn deploy() -> anyhow::Result<()> {
     
     log!("add answ. status: {:?}", check.json::<String>()?); 
     
-    let check2 = contract. // Here is kukojzjzj
+    let check2 = contract. 
         call("add_answers").
         args_json(serde_json::json!({
             "thread_number": number,
@@ -144,17 +148,19 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("add answ. status: {:?}", check2.json::<String>()?);
 
-/////////////////////////////////////////////////////    
-    let answer = contract.
+
+    let answer: String = contract.
             call("get_thread_answers").
             args_json(serde_json::json!({
                 "thread_number": number,
             })).
             view().
-            await?.;
+            await?.
+            json()?;
 
-    log!("from thread answ = {:?}", answer);
-    
+log!("from thread answ = {:?}", answer);
+
+/////////////////////////////////////////////////////    
 
             
     contract.
@@ -169,7 +175,7 @@ async fn deploy() -> anyhow::Result<()> {
     let ban_check: String = contract.
                         call("is_banned").
                         args_json(serde_json::json!({
-                                "name": subaccount2.id()
+                                "name": subaccount.id()
                         })).
                         view().
                         await?.
@@ -178,7 +184,7 @@ async fn deploy() -> anyhow::Result<()> {
     let ban_check2: String = contract.
                         call("is_banned").
                         args_json(serde_json::json!({
-                                "name": subaccount.id()
+                                "name": subaccount2.id()
                         })).
                         view().
                         await?.

@@ -115,8 +115,14 @@ impl ImageBoard{
     }
 
 
-    pub fn add_moder(&mut self, user_id: AccountId){
-        self.moderators.push(&user_id);
+    pub fn add_moder(&mut self, user_id: AccountId) -> String{
+        let call_account = env::predecessor_account_id();
+        if call_account.to_string() == self.owner.to_string() {
+            self.moderators.push(&user_id);
+            "success".to_string()
+        } else {
+            "denied".to_string()
+        }
 
     }
 
@@ -134,19 +140,24 @@ impl ImageBoard{
         self.moderators.iter().map(|x| x.to_string()).collect()
     }
 
-    pub fn delete_moder(&mut self, user_id:AccountId) {
-        let index = self.moderators
+    pub fn delete_moder(&mut self, user_id:AccountId) -> String {
+        let call_account = env::predecessor_account_id();
+        if call_account.to_string() == self.owner.to_string() {
+            let index = self.moderators
             .iter()
             .position(|x| x.as_str() == user_id.as_str())
             .unwrap();
             
-        self.moderators.swap_remove(index as u64);
+            self.moderators.swap_remove(index as u64);
+            "success".to_string()
+        } else {
+            "denied".to_string()
+        }
 
     }
 
     pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
         let mut thread =  self.threads.get(&thread_number).unwrap();
-        log!("answ cont {:?}", thread.answers.len());
         let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
 
         if thread.is_closed {

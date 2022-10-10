@@ -204,7 +204,7 @@ log!("from thread answ = {:?}", answer);
     log!("list_bans: {:?}", list_bans);
     
     
-    contract.
+    let add_moder = contract.
         call("add_moder").
         args_json(serde_json::json!({
             "user_id": subaccount2.id(),
@@ -212,6 +212,7 @@ log!("from thread answ = {:?}", answer);
         transact().
         await?.
         into_result()?;
+    log!("add moder{:?}", add_moder);
 
     let list_mods: Vec<String> = contract.
         call("get_moders").

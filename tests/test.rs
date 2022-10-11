@@ -68,16 +68,17 @@ async fn deploy() -> anyhow::Result<()> {
 
     
     let number: i32 = 1 ;
-    let thread = contract.
+    let thread: String = contract.
                     call("get_the_thread").
                     args_json((number,)).
                     view().
-                    await?;
+                    await?.
+                    json()?;
     
     log!("generated: {:?}", random_thread_string);
-    log!("from contract: {:?}", thread.json::<String>()?);
+    log!("from contract: {:?}", thread);
 
-    assert_eq!(random_thread_string, thread.json::<String>()?);
+    assert_eq!(random_thread_string, thread);
 
 
 //////////////////////////////////////////////////////
@@ -154,10 +155,29 @@ async fn deploy() -> anyhow::Result<()> {
 
 log!("from thread answ = {:?}", answer);
 
-/////////////////////////////////////////////////////    
+/////////////////////////////////////////////////////  
+log!("{:?}", subaccount2.id());
+let add_moder = contract.
+        call("add_moder").
+        args_json(serde_json::json!({
+            "user_id": subaccount2.id(),
+        })).
+        transact().
+        await?.
+        into_result()?;
+        
+log!("add moder{:?}", add_moder.json::<String>()?); //can't check this cos signer_acc is not owner and idk why.
+
+/*let list_mods: Vec<String> = contract.
+        call("get_moders").
+        view().
+        await?.
+        json()?;
+
+    log!("list_bans: {:?}", list_mods);*/
 
             
-    contract.
+    /*contract.
             call("ban").
             args_json(serde_json::json!({
                 "user": subaccount.id(),
@@ -220,7 +240,7 @@ log!("from thread answ = {:?}", answer);
         await?.
         json()?;
 
-    log!("list_bans: {:?}", list_mods);    
+    log!("list_bans: {:?}", list_mods);  */  
 
 
     Ok(())

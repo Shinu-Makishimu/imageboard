@@ -107,14 +107,31 @@ impl ImageBoard{
     }
 
     pub fn remove_thread(&mut self, key: &i32) {
-        self.threads.remove(&key);
+        let author = env::predecessor_account_id();  
+
+        if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
+            match self.threads.remove(&key) {
+                Some(_result) => { log!("Removing thread {:?} succes", key);},
+                None => { log!("Removing thread {:?} failed", key); },
+        }
+    
+        } else {
+            log!("permission denied");
+        }
 
     }
 
     pub fn ban_thread(&mut self, number: i32) {
-        let mut thread = self.threads.get(&number).unwrap();
-        thread.is_closed = true;
-        self.threads.insert(&number, &thread);
+        let author = env::predecessor_account_id();  
+
+        if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
+            let mut thread = self.threads.get(&number).unwrap();
+            thread.is_closed = true;
+            self.threads.insert(&number, &thread);
+            log!("thred is banned");
+        } else {
+            log!("thread ban failed");
+        }
 
     }
 
@@ -221,7 +238,6 @@ impl ImageBoard{
 
     pub fn ban(&mut self, user: &AccountId) {
         let author = env::predecessor_account_id();  
-        log!("author {:?}, user {:?}, owner {:?}", author, user, self.owner);
         if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
             self.bans.push(&user);
             log!("ban");
@@ -248,12 +264,19 @@ impl ImageBoard{
 
 
     pub fn remove_ban (&mut self, user: AccountId) {
-        let index: usize = self.bans
-            .iter()
-            .position(|x| x.to_string() == user.to_string())
-            .unwrap();
-        self.bans.swap_remove(index as u64);
+        let author = env::predecessor_account_id();  
+        if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
+            let index: usize = self.bans
+                .iter()
+                .position(|x| x.to_string() == user.to_string())
+                .unwrap();
+            self.bans.swap_remove(index as u64);
+            log!("unban success");
+        } else {
+            log!("unban fail");
+        }
     }
+    
 }
 
 
@@ -297,6 +320,11 @@ mod tests {
         
         let thread: String = contract.get_the_thread(420);
         assert_eq!(thread, "thread not found".to_string());
+
+        contract.remove_thread(&1);
+        contract.remove_thread(&1);
+        assert_eq!(99, contract.get_threads().len());
+
     }
 
     #[test]

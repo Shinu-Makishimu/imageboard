@@ -222,6 +222,13 @@ log!("from thread answ = {:?}", answer);
 
     log!("list_bans: {:?}", list_mods);    
 
+    let _check_moder: String = contract.
+                call("is_moder").
+                args_json(serde_json::json!({"name":subaccount2.id()})).
+                view().
+                await?.
+                borsh()?;
+
     Ok(())
 
 }   

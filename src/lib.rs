@@ -99,7 +99,11 @@ impl ImageBoard{
     }
 
     pub fn get_the_thread(&self, number: i32) -> String {
-        self.threads.get(&number).unwrap().text.clone()
+        //self.threads.get(&number).unwrap().text.clone()
+        match self.threads.get(&number) {
+            Some(thread) => thread.text.clone(),
+            None => "thread not found".to_string(),
+        }
     }
 
     pub fn remove_thread(&mut self, key: &i32) {
@@ -117,6 +121,7 @@ impl ImageBoard{
 
     pub fn add_moder(&mut self, user_id: AccountId) -> String{
         let call_account = env::predecessor_account_id();
+        log!("{:?}",call_account);
         if call_account.to_string() == self.owner.to_string() {
             self.moderators.push(&user_id);
             "success".to_string()
@@ -209,7 +214,7 @@ impl ImageBoard{
             values_as_vector().
             to_vec().
             into_iter().
-            map(|mut x| {x.push_str("$"); x})
+            map(|mut x| {x.push_str("\n"); x})
             .collect()
     }
 
@@ -247,46 +252,83 @@ mod tests {
     use near_sdk::log;
 
     use super::*;
+    #[test]
+    fn create_board() {
+        let contract: ImageBoard = ImageBoard::default();
+        let owner:AccountId = contract.get_owner();
+        log!("owner {:?}", owner.to_string());
     
+    }
+
     #[test]
     fn add_thread() {
-        let mut contract = ImageBoard::default();
+        let mut contract: ImageBoard = ImageBoard::default();
+
+        contract.add_thread("sup NEARach. There is some tyan...".to_string());
+        
+        assert_eq!(1, contract.get_threads().len());
+
+
         for _ in 1..100 {
-            contract.add_thread("there are all dead".to_string());
+            contract.add_thread("threads dudos".to_string());
           
 
         }
         log!("total threads {:?}", contract.get_threads().len()); 
         log!("count{:?}", contract.get_count());   
 
-        assert_eq!(99, contract.get_threads().len());
+        assert_eq!(100, contract.get_threads().len());
 
-        let thread = contract.get_the_thread(4);
-
-        log!("thread numb 4 for check  = {:?}", thread);
-        assert_eq!(thread, "there are all dead".to_string());
-        log!("add first answer");
-        contract.add_answers(4, "PTN PNX".to_string());
-        log!("get answ  = {:?}", contract.get_thread_answers(4));
-        
-        let thread = contract.get_the_thread(4);
+        let thread: String = contract.get_the_thread(4);
 
         log!("thread numb 4 for check  = {:?}", thread);
+        assert_eq!(thread, "threads dudos".to_string());
         
         
-        log!("add second answer");
-
-        contract.add_answers(4, "+15".to_string());
-        contract.add_answers(4, "lahta gtfo".to_string());
-
-        let answ = contract.get_thread_answers(4);
-        log!("answers  = {:?}", answ);
-
-        let threads = contract.get_threads();
-        log!("answers  = {:?}", threads);
-
-
-
-
+        let thread: String = contract.get_the_thread(420);
+        assert_eq!(thread, "thread not found".to_string());
     }
+
+    #[test]
+    fn add_get_answers() {
+        let mut contract: ImageBoard = ImageBoard::default();
+
+        contract.add_thread("sup NEARach. There is some tyan...".to_string());
+        
+        
+        let answ: String = contract.add_answers(1, "bbs or go".to_string());
+        log!("status  = {:?}", answ);
+        contract.add_answers(1, "gurls wthout magic stick do not exist".to_string());
+        contract.add_answers(1, "show her magic stick!".to_string());
+        let thread: String = contract.get_the_thread(1);
+
+        log!("thread numb 1 for check  = {:?}", thread);
+        
+        
+        let answ: String = contract.get_thread_answers(1);
+        for i in answ.lines() {
+            log!("answers  = {:?}", i);
+        }
+    }
+
+    #[test]
+    fn moders() {
+        let sarina: AccountId = "sarina.near".parse().unwrap();
+        let mars: AccountId = "mars.near".parse().unwrap();
+        let _bailey: AccountId = "bailey.near".parse().unwrap();
+
+        let mut contract: ImageBoard = ImageBoard::default();
+        log!("owner  {:?}", contract.get_owner());
+        
+        let moder: String = contract.add_moder(mars);
+        log!("moder {:?}", moder);
+
+        let check: String = contract.is_moder(sarina);
+        log!("check  {:?}", check);
+
+        let list_moder: Vec<String> = contract.get_moders();
+        log!("moder list  {:?}", list_moder);
+    
+    }
+
 }

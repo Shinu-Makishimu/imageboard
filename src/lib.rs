@@ -306,7 +306,7 @@ mod tests {
         assert_eq!(1, contract.get_threads().len());
 
 
-        for _ in 1..100 {
+        for _ in 1..50 {
             contract.add_thread("threads dudos".to_string());
           
 
@@ -314,7 +314,7 @@ mod tests {
         log!("total threads {:?}", contract.get_threads().len()); 
         log!("count{:?}", contract.get_count());   
 
-        assert_eq!(100, contract.get_threads().len());
+        assert_eq!(50, contract.get_threads().len());
 
         let thread: String = contract.get_the_thread(4);
 
@@ -327,7 +327,7 @@ mod tests {
 
         contract.remove_thread(&1);
         contract.remove_thread(&1);
-        assert_eq!(99, contract.get_threads().len());
+        assert_eq!(49, contract.get_threads().len());
 
     }
 

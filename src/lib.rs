@@ -71,18 +71,22 @@ impl ImageBoard{
             self.remove_thread(&key);
 
         }
+        if self.bans.iter().any(|x| x.to_string() == author.to_string()){
+            log!("access denied, reason - ban");
+        }else {
+            let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
 
-        let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
-
-        let message = Thread{
-                    author, 
-                    text, 
-                    is_closed,
-                    answers,
-                };
-        self.threads_count += 1;
-        
-        self.threads.insert(&self.threads_count, &message);
+            let message = Thread{
+                        author, 
+                        text, 
+                        is_closed,
+                        answers,
+                    };
+            self.threads_count += 1;
+            
+            self.threads.insert(&self.threads_count, &message);
+            log!("tread add success");
+        }
         
     }
         

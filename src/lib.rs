@@ -131,7 +131,7 @@ impl ImageBoard{
 
     }
 
-    pub fn is_moder(&self, name: AccountId) -> String {
+    pub fn is_moder(&self, name: &AccountId) -> String {
         if self.moderators.iter().any(|x| x.to_string() == name.to_string()) {
             "moder".to_string()
         } else {
@@ -168,7 +168,7 @@ impl ImageBoard{
         if thread.is_closed {
            "thread is closed".to_string() 
         
-        } else if self.is_banned(author) == "banned "{
+        } else if self.is_banned(&author) == "banned "{
             "banned".to_string() 
         
         
@@ -219,11 +219,21 @@ impl ImageBoard{
     }
 
 
-    pub fn ban(&mut self, user: AccountId) {
-        self.bans.push(&user);
+    pub fn ban(&mut self, user: &AccountId) {
+        let author = env::predecessor_account_id();  
+        log!("author {:?}, user {:?}, owner {:?}", author, user, self.owner);
+        if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
+            self.bans.push(&user);
+            log!("ban");
+
+        } else {
+            log!("ban fail");
+
+        }
+
     }
 
-    pub fn is_banned(&self, name: AccountId) -> String {
+    pub fn is_banned(&self, name: &AccountId) -> String {
         if self.bans.iter().any(|x| x.to_string() == name.to_string()) {
             "banned".to_string()
         } else {
@@ -315,7 +325,7 @@ mod tests {
     fn moders() {
         let sarina: AccountId = "sarina.near".parse().unwrap();
         let mars: AccountId = "mars.near".parse().unwrap();
-        let _bailey: AccountId = "bailey.near".parse().unwrap();
+        let bailey: AccountId = "bailey.near".parse().unwrap();
 
         let mut contract: ImageBoard = ImageBoard::default();
         log!("owner  {:?}", contract.get_owner());
@@ -323,12 +333,17 @@ mod tests {
         let moder: String = contract.add_moder(mars);
         log!("moder {:?}", moder);
 
-        let check: String = contract.is_moder(sarina);
+        let check: String = contract.is_moder(&sarina);
         log!("check  {:?}", check);
 
         let list_moder: Vec<String> = contract.get_moders();
         log!("moder list  {:?}", list_moder);
-    
+        
+        let _ban = contract.ban(&bailey);
+        let ban_list = contract.get_bans();
+        log!("ban list  {:?}", ban_list);
+
+
     }
 
 }

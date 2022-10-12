@@ -58,6 +58,14 @@ impl ImageBoard{
         }
     }
 
+    pub fn assert_owner(&self) {
+        assert_eq!(
+            &self.owner,
+            &env::predecessor_account_id(),
+            "Not owner"
+        );
+    }
+
     pub fn get_owner(&self) -> AccountId {
         self.owner.clone()
     }
@@ -113,7 +121,7 @@ impl ImageBoard{
     pub fn remove_thread(&mut self, key: &i32) {
         let author = env::predecessor_account_id();  
 
-        if (self.is_moder(&author) == "moder".to_string()) | (&self.owner.to_string() == &author.to_string())  {
+        if (self.is_moder(&author) == *"moder") | (self.owner.to_string() == author.to_string())  {
             match self.threads.remove(&key) {
                 Some(_result) => { log!("Removing thread {:?} succes", key);},
                 None => { log!("Removing thread {:?} failed", key); },

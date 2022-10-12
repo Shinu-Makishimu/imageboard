@@ -17,6 +17,10 @@ async fn deploy() -> anyhow::Result<()> {
     let wasm: Vec<u8> = std::fs::read(WASM_FILEPATH).unwrap();
     let contract: Contract = worker.dev_deploy(&wasm).await?;
     let account: Account = worker.dev_create_account().await?;
+    let account2: Account = worker.dev_create_account().await?;
+    let account3: Account = worker.dev_create_account().await?;
+    
+    
 
     let subaccount: Account = account.
                                 create_subaccount("lahtabot1").
@@ -57,8 +61,8 @@ async fn deploy() -> anyhow::Result<()> {
     //////////////////////////////////////////////////////
     let random_thread_string: String = common::generate_random_string();
 
-    contract.
-        call("add_thread").
+    account.
+        call(contract.id(), "add_thread").
         args_json(serde_json::json!({
             "text": random_thread_string
         })).
@@ -83,8 +87,8 @@ async fn deploy() -> anyhow::Result<()> {
 
 //////////////////////////////////////////////////////
 
-    contract.
-        call("add_thread").
+    account2.
+        call(contract.id(),"add_thread").
         args_json(serde_json::json!({
             "text": common::generate_random_string()
         })).
@@ -92,8 +96,8 @@ async fn deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
 
-    contract.
-        call("add_thread").
+    account3.
+        call(contract.id(),"add_thread").
         args_json(serde_json::json!({
             "text": common::generate_random_string()
         })).
@@ -101,12 +105,13 @@ async fn deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
     
-    let thread_count = contract.
-                                                call("get_count").
-                                                view().
-                                                await?;
+    let thread_count:i32 = contract.
+                        call("get_count").
+                        view().
+                        await?.
+                        json()?;
 
-    log!("thread count: {:?}", thread_count.json::<i32>()?);
+    log!("thread count: {:?}", thread_count);
     
     let all_threads:Vec<(i32, String, String)> = contract.
                             call("get_threads").
@@ -153,34 +158,35 @@ async fn deploy() -> anyhow::Result<()> {
             await?.
             json()?;
 
-log!("from thread answ = {:?}", answer);
+    log!("from thread answ = {:?}", answer);
 
 /////////////////////////////////////////////////////  
-log!("{:?}", subaccount2.id());
-let add_moder = contract.
-        call("add_moder").
+    log!("{:?}", subaccount2.id());
+
+    let add_moder = account.
+        call(contract.id(),"add_moder").
         args_json(serde_json::json!({
-            "user_id": subaccount2.id(),
+            "user_id": account2.id(),
         })).
         transact().
         await?.
         into_result()?;
         
-log!("add moder{:?}", add_moder.json::<String>()?); //can't check this cos signer_acc is not owner and idk why.
+    log!("add moder{:?}", add_moder.json::<String>()?); //can't check this cos signer_acc is not owner and idk why.
 
-/*let list_mods: Vec<String> = contract.
+    let list_mods: Vec<String> = contract.
         call("get_moders").
         view().
         await?.
         json()?;
 
-    log!("list_bans: {:?}", list_mods);*/
+    log!("list_moders: {:?}", list_mods);
 
             
-    /*contract.
-            call("ban").
+    account.
+            call(contract.id(), "ban").
             args_json(serde_json::json!({
-                "user": subaccount.id(),
+                "user": account3.id(),
             })).
             transact().
             await?.
@@ -191,56 +197,19 @@ log!("add moder{:?}", add_moder.json::<String>()?); //can't check this cos signe
                         await?.
                         json()?;
     
-    log!("account {:?}", subaccount.id().to_string());
     log!("list_bans: {:?}", list_bans);
     
-    let ban_check: String = contract.
-                        call("is_banned").
-                        args_json(serde_json::json!({
-                                "name": subaccount.id()
-                        })).
-                        view().
-                        await?.
-                        json()?;
-
-    
-    log!("Banned1? {:?}", ban_check);
-
-    contract.
-        call("remove_ban").
+    let check = account3.
+        call(contract.id(), "add_thread").
         args_json(serde_json::json!({
-            "user":subaccount.id()
+            "text": random_thread_string
         })).
         transact().
         await?.
         into_result()?;
 
-    let list_bans: Vec<String> = contract.
-                        call("get_bans").
-                        view().
-                        await?.
-                        json()?;
     
-    log!("list_bans: {:?}", list_bans);
-    
-    
-    let add_moder = contract.
-        call("add_moder").
-        args_json(serde_json::json!({
-            "user_id": subaccount2.id(),
-        })).
-        transact().
-        await?.
-        into_result()?;
-    log!("add moder{:?}", add_moder);
-
-    let list_mods: Vec<String> = contract.
-        call("get_moders").
-        view().
-        await?.
-        json()?;
-
-    log!("list_bans: {:?}", list_mods);  */  
+        log!("check: {:?}", check);
 
 
     Ok(())

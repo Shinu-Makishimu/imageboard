@@ -52,6 +52,10 @@ impl ImageBoard{
 
     #[init]
     pub fn new(owner: AccountId) -> Self {
+        // init ft here ???
+
+
+
         Self { 
             threads: UnorderedMap::new(b"threads".to_vec()), 
             owner, 

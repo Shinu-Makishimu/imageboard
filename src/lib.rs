@@ -1,12 +1,15 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
-use near_sdk::{near_bindgen, AccountId, env, log};
+use near_sdk::{near_bindgen, AccountId, env, log, Balance};
+
+const POINT_ONE: Balance = 10000000000000000000000;
 
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Thread {
     pub author: AccountId,
+    pub premium: bool,
     pub text: String,
     pub is_closed: bool,
     pub answers: UnorderedMap<i32, String>,
@@ -69,8 +72,9 @@ impl ImageBoard{
     pub fn get_owner(&self) -> AccountId {
         self.owner.clone()
     }
-
+    #[payable]
     pub fn add_thread(&mut self, text: String) {
+        let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
         let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
 
@@ -86,6 +90,7 @@ impl ImageBoard{
 
             let message = Thread{
                         author, 
+                        premium,
                         text, 
                         is_closed,
                         answers,
@@ -102,10 +107,10 @@ impl ImageBoard{
         self.threads_count
     }
     
-    pub fn get_threads(&self) -> Vec<(i32, String, String)> {
-        let mut b: Vec<(i32, String, String)> =  vec![];
+    pub fn get_threads(&self) -> Vec<(i32, String, String, bool)> {
+        let mut b: Vec<(i32, String, String, bool)> =  vec![];
         for element in self.threads.to_vec(){
-            b.push((element.0, element.1.author.to_string(), element.1.text))
+            b.push((element.0, element.1.author.to_string(), element.1.text, element.1.premium))
         }
         b
     }

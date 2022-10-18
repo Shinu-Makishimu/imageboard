@@ -24,6 +24,7 @@ async fn deploy() -> anyhow::Result<()> {
 
     let subaccount: Account = account.
                                 create_subaccount("lahtabot1").
+                                initial_balance(near_units::parse_near!("5")).
                                 transact().
                                 await?.
                                 into_result()?;
@@ -104,6 +105,16 @@ async fn deploy() -> anyhow::Result<()> {
         transact().
         await?.
         into_result()?;
+    subaccount.
+        call(contract.id(),"add_thread").
+        args_json(serde_json::json!({
+            "text": common::generate_random_string()
+        })).
+        deposit(near_units::parse_near!("1")).
+        transact().
+        await?.
+        into_result()?;
+
     
     let thread_count:i32 = contract.
                         call("get_count").
@@ -113,7 +124,7 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("thread count: {:?}", thread_count);
     
-    let all_threads:Vec<(i32, String, String)> = contract.
+    let all_threads:Vec<(i32, String, String, bool)> = contract.
                             call("get_threads").
                             view().
                             await?.
@@ -172,7 +183,7 @@ async fn deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
         
-    log!("add moder{:?}", add_moder.json::<String>()?); //can't check this cos signer_acc is not owner and idk why.
+    log!("add moder{:?}", add_moder.json::<String>()?); 
 
     let list_mods: Vec<String> = contract.
         call("get_moders").

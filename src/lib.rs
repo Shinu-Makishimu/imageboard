@@ -1,4 +1,5 @@
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
+use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::json_types::U128;
@@ -63,6 +64,21 @@ impl Default for ImageBoard{
 }
 
 
+
+#[near_bindgen]
+impl FungibleTokenReceiver for ImageBoard {
+
+    fn ft_on_transfer( &mut self, sender_id: AccountId, amount: U128, msg: String, ) -> PromiseOrValue<U128> {
+        
+        ext_self::ext(env::current_account_id())
+            .with_static_gas(FT_FINISH_DEPOSIT_GAS)
+            .finish_deposit(env::predecessor_account_id(), amount.0);
+        PromiseOrValue::Value(U128(0))
+    }
+}
+
+
+
 #[near_bindgen]
 impl ImageBoard{
 
@@ -102,19 +118,7 @@ impl ImageBoard{
         let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
-
-
-        ft_contract::ext(token_id.clone()
-        .with_attached_deposit(ONE_YOCTO)
-        .with_static_gas(CALLBACK_GAS)
-        .ft_transfer(account_id.clone(), amount, None)
-        .then(Self::ext(env::current_account_id())
-            .with_static_gas(CALLBACK_GAS)
-            .on_transfer_from_balance(account.account_id.clone(), amount, account_id.clone(), token_id.clone())
-        ));
-
-
-
+        //here must be token send and check
 
         if self.threads.len() > 500 {
             let key: i32 = self.threads_count - 500;
@@ -333,10 +337,7 @@ impl ImageBoard{
     }
     
 }
-#[ext_contract(ft_contract)]
-pub trait FungibleToken {
-    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>);
-}
+
 
 #[cfg(test)]
 mod tests {

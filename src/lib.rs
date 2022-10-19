@@ -1,5 +1,5 @@
 use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::json_types::U128;
@@ -60,20 +60,6 @@ impl Default for ImageBoard{
             bans: Vector::new(b"bans".to_vec()),
         
         }
-    }
-}
-
-
-
-#[near_bindgen]
-impl FungibleTokenReceiver for ImageBoard {
-
-    fn ft_on_transfer( &mut self, sender_id: AccountId, amount: U128, msg: String, ) -> PromiseOrValue<U128> {
-        
-        ext_self::ext(env::current_account_id())
-            .with_static_gas(FT_FINISH_DEPOSIT_GAS)
-            .finish_deposit(env::predecessor_account_id(), amount.0);
-        PromiseOrValue::Value(U128(0))
     }
 }
 

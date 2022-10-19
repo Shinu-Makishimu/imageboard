@@ -1,8 +1,29 @@
+use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
-use near_sdk::{near_bindgen, AccountId, env, log, Balance};
-
+use near_sdk::json_types::U128;
+use near_sdk::{near_bindgen, AccountId, env, log, Balance, Gas, PanicOnDefault, Promise, PromiseOrValue, ext_contract, ONE_YOCTO };
+use near_contract_standards::storage_management::StorageBalance;
 const POINT_ONE: Balance = 10000000000000000000000;
+
+
+
+
+#[ext_contract(ft_contract)]
+pub trait FungibleToken {
+    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>,) -> PromiseOrValue<U128>;
+
+    fn ft_transfer_call(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>, msg: String,) -> PromiseOrValue<U128>;
+
+    fn ft_metadata(&self) -> FungibleTokenMetadata;
+
+    fn storage_balance_of(&mut self, account_id: Option<AccountId>) -> Option<StorageBalance>;
+}
+
+
+
+
+
 
 
 #[near_bindgen]
@@ -80,7 +101,20 @@ impl ImageBoard{
     pub fn add_thread(&mut self, text: String) {
         let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
-        let author = env::predecessor_account_id();  //?? should i use signer_account_id insted?
+        let author = env::predecessor_account_id();
+
+
+        ft_contract::ext(token_id.clone()
+        .with_attached_deposit(ONE_YOCTO)
+        .with_static_gas(CALLBACK_GAS)
+        .ft_transfer(account_id.clone(), amount, None)
+        .then(Self::ext(env::current_account_id())
+            .with_static_gas(CALLBACK_GAS)
+            .on_transfer_from_balance(account.account_id.clone(), amount, account_id.clone(), token_id.clone())
+        ));
+
+
+
 
         if self.threads.len() > 500 {
             let key: i32 = self.threads_count - 500;
@@ -299,7 +333,10 @@ impl ImageBoard{
     }
     
 }
-
+#[ext_contract(ft_contract)]
+pub trait FungibleToken {
+    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>);
+}
 
 #[cfg(test)]
 mod tests {

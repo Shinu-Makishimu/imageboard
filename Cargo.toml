@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 near-sdk = { git = "https://github.com/near/near-sdk-rs", tag = "4.0.0"}
+near-contract-standards = "4.0.0"
 
 [profile.release]
 codegen-units = 1

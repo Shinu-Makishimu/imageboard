@@ -1,10 +1,11 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::json_types::U128;
-use near_sdk::{near_bindgen, AccountId, env, log, Balance, Gas, PanicOnDefault, Promise, PromiseOrValue, ext_contract, ONE_YOCTO };
+use near_sdk::{near_bindgen, AccountId, env, log, Balance, Promise, PromiseOrValue, ext_contract };
 
 const POINT_ONE: Balance = 10000000000000000000000;
 
+mod token_receiver;
 
 
 
@@ -27,7 +28,7 @@ pub struct ImageBoard {
     moderators: Vector<AccountId>,
     threads_count: i32,
     bans: Vector<AccountId>,
-    //balance
+    balance: Balance,
 
 }
 
@@ -46,12 +47,15 @@ pub trait ExtContract {
 impl Default for ImageBoard{
     fn default() -> Self {
         let owner = env::predecessor_account_id();
+
+
         Self { 
             threads: UnorderedMap::new(b"threads".to_vec()), 
             owner, 
             moderators: Vector::new(b"moderators".to_vec()),
             threads_count: 0,
             bans: Vector::new(b"bans".to_vec()),
+            balance: 0u128,
         
         }
     }
@@ -79,6 +83,7 @@ impl ImageBoard{
             moderators: Vector::new(b"moderators".to_vec()),
             threads_count: 0,
             bans: Vector::new(b"bans".to_vec()),
+            balance: 0u128,
         }
     }
 
@@ -98,8 +103,13 @@ impl ImageBoard{
         let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
-        //here must be token send and check
 
+
+        //
+        //self.ft_on_transfer(author, amount, msg);
+
+
+        
         if self.threads.len() > 500 {
             let key: i32 = self.threads_count - 500;
             self.remove_thread(&key);

@@ -1,28 +1,9 @@
-use near_contract_standards::fungible_token::metadata::FungibleTokenMetadata;
-
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::json_types::U128;
 use near_sdk::{near_bindgen, AccountId, env, log, Balance, Gas, PanicOnDefault, Promise, PromiseOrValue, ext_contract, ONE_YOCTO };
-use near_contract_standards::storage_management::StorageBalance;
+
 const POINT_ONE: Balance = 10000000000000000000000;
-
-
-
-
-#[ext_contract(ft_contract)]
-pub trait FungibleToken {
-    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>,) -> PromiseOrValue<U128>;
-
-    fn ft_transfer_call(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>, msg: String,) -> PromiseOrValue<U128>;
-
-    fn ft_metadata(&self) -> FungibleTokenMetadata;
-
-    fn storage_balance_of(&mut self, account_id: Option<AccountId>) -> Option<StorageBalance>;
-}
-
-
-
 
 
 
@@ -37,6 +18,7 @@ pub struct Thread {
     pub answers: UnorderedMap<i32, String>,
 }
 
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct ImageBoard {
@@ -45,6 +27,18 @@ pub struct ImageBoard {
     moderators: Vector<AccountId>,
     threads_count: i32,
     bans: Vector<AccountId>,
+    //balance
+
+}
+
+
+#[ext_contract(ext_self)]
+pub trait ExtContract {
+    #[result_serializer(borsh)]
+    fn finish_deposit(&self, token_id: AccountId, amount: U128, msg: String,) -> PromiseOrValue<U128>;
+
+    #[result_serializer(borsh)]
+    fn finish_withdraw(&self,) ->Promise;
 
 }
 

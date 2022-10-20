@@ -16,6 +16,7 @@ async fn deploy() -> anyhow::Result<()> {
     let worker: Worker<Sandbox> = workspaces::sandbox().await?;
     let wasm: Vec<u8> = std::fs::read(WASM_FILEPATH).unwrap();
     let contract: Contract = worker.dev_deploy(&wasm).await?;
+    
     let account: Account = worker.dev_create_account().await?;
     let account2: Account = worker.dev_create_account().await?;
     let account3: Account = worker.dev_create_account().await?;

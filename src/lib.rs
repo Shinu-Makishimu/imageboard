@@ -73,10 +73,6 @@ impl ImageBoard{
 
     #[init]
     pub fn new(owner: AccountId) -> Self {
-        // init ft here ???
-
-
-
         Self { 
             threads: UnorderedMap::new(b"threads".to_vec()), 
             owner, 
@@ -104,12 +100,6 @@ impl ImageBoard{
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
 
-
-        //
-        //self.ft_on_transfer(author, amount, msg);
-
-
-        
         if self.threads.len() > 500 {
             let key: i32 = self.threads_count - 500;
             self.remove_thread(&key);
@@ -137,6 +127,10 @@ impl ImageBoard{
         
     pub fn get_count(&self) -> i32 {
         self.threads_count
+    }
+
+    pub fn get_balance(&self) -> u128 {
+        self.balance.clone()
     }
     
     pub fn get_threads(&self) -> Vec<(i32, String, String, bool)> {
@@ -324,6 +318,20 @@ impl ImageBoard{
         } else {
             log!("unban fail");
         }
+    }
+
+    #[private]
+    #[result_serializer(borsh)]
+    pub fn finish_deposit(
+        // self balance will be changed after receiver call.
+        &mut self,
+        #[serializer(borsh)] account_id: AccountId,
+        #[serializer(borsh)] amount: u128,
+        #[serializer(borsh)] msg: String,
+    ) -> PromiseOrValue<u128> {
+        log!("account {}, message {},", account_id, msg);
+        self.balance += amount;
+        PromiseOrValue::Value(amount)
     }
     
 }

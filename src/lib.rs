@@ -431,4 +431,12 @@ mod tests {
 
     }
 
+    #[test]
+    fn balance() {
+        let contract: ImageBoard = ImageBoard::default();
+        let balanse: u128 = contract.get_balance();
+        log!("balanse {:?}", balanse);
+    
+    }
+
 }

@@ -20,7 +20,7 @@ impl FungibleTokenReceiver for ImageBoard {
         assert_eq!(env::predecessor_account_id(), sender_id);
         ext_self::ext(env::current_account_id())
             .with_static_gas(FT_FINISH_DEPOSIT_GAS)
-            .finish_deposit(env::predecessor_account_id(), near_sdk::json_types::U128(amount.0), msg);
+            .finish_deposit(env::predecessor_account_id(), amount, msg);
         PromiseOrValue::Value(U128(0))
         
     }

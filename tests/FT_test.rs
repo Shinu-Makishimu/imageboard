@@ -1,8 +1,6 @@
-
-use near_sdk::json_types::U128;
+#[warn(unused_variables)]
 use near_sdk::{log};
 use serde_json::json;
-use workspaces::result::ExecutionResult;
 use std::convert::TryInto;
 
 use anyhow::Ok;
@@ -85,15 +83,10 @@ async fn test_deploy() -> anyhow::Result<()> {
     //create worker and owner
     let worker: Worker<Sandbox> = workspaces::sandbox().await?;
     let owner: Account = worker.root_account()?;
-    //let owner_id = owner.id();
-    
-    //let wasm: Vec<u8> = std::fs::read(WASM_FILEPATH).unwrap();
+
 
     let wnear: Contract = create_wnear(&owner, &worker).await?;
     let imageboard: Contract = create_testname(&owner, &worker).await?;
-    /*let imageboard: Contract = worker.
-                                dev_deploy(&wasm).
-                                await?;*/
 
     let register_result = owner
         .call(wnear.id(), "storage_deposit")
@@ -107,19 +100,6 @@ async fn test_deploy() -> anyhow::Result<()> {
         .into_result()?;
 
 
-
-
-
-
-    /*imageboard.
-        call("new").
-        args_json(serde_json::json!({
-            "owner": owner.id()
-        })).
-        transact().
-        await?.
-        into_result()?;*/
-
     let owner_id: AccountId = imageboard 
         .call("get_owner")
         .view()
@@ -131,26 +111,12 @@ async fn test_deploy() -> anyhow::Result<()> {
 
 
     log!("wnear22{:?}", wnear.id());
-    /*let transfer = owner.
-                    call(wnear.id(), "ft_transer_call").
-                    args_json(json!({
-                        "receiver_id": owner_id,
-                        "amount": parse_near!("420 N").to_string(),
-                        "msg": "idk0what1i2must3write4here".to_string(),
-                    })).
-                    gas(parse_gas!("200 Tgas") as u64).
-                    deposit(1).
-                    transact().
-                    await?.
-                    into_result()?;*/
-
-
-    let transfer2 = wnear.
-                    call("ft_transfer_call").
+    let transfer = owner.
+                    call(wnear.id(), "ft_transfer_call").
                     args_json(json!({
                         "receiver_id": imageboard.id(),
                         "amount": parse_near!("420 N").to_string(),
-                        "msg": "idk0what1i2must3write4here",
+                        "msg": "idk0what1i2must3write4here".to_string(),
                     })).
                     gas(parse_gas!("200 Tgas") as u64).
                     deposit(1).
@@ -159,14 +125,13 @@ async fn test_deploy() -> anyhow::Result<()> {
                     into_result()?;
 
 
-    /*log!("transfer{:?}", transfer);
-    let balanse:U128 = imageboard 
+    let balanse:u128 = imageboard 
                             .call("get_balance")
                             .view()
                             .await?
                             .json()?;
     
-    log!("balanse {:?}", balanse);*/
+    log!("balanse {:?}", balanse);
     Ok(())
 
 }

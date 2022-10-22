@@ -1,8 +1,8 @@
-#[warn(unused_variables)]
+
 use near_sdk::{log};
 use serde_json::json;
 use std::convert::TryInto;
-
+use near_sdk::ONE_YOCTO;
 use anyhow::Ok;
 use near_units::{parse_gas, parse_near};
 use workspaces::network::Sandbox;
@@ -52,7 +52,7 @@ async fn create_wnear(
         .call(wnear.id(), "new")
         .args_json(serde_json::json!({
             "owner_id": owner.id(),
-            "total_supply": parse_near!("1,000,000,000 N"),
+            "total_supply": parse_near!("1000 N"),
         }))
         .transact()
         .await?
@@ -99,6 +99,8 @@ async fn test_deploy() -> anyhow::Result<()> {
         .await?
         .into_result()?;
 
+    log!("register result {:?}", register_result);
+
 
     let owner_id: AccountId = imageboard 
         .call("get_owner")
@@ -108,6 +110,7 @@ async fn test_deploy() -> anyhow::Result<()> {
     
     log!("from contract: {:?}", owner_id);
     log!("from account {:?}", owner.id());
+    log!("imageboard id {:?}", imageboard.id());
 
 
     log!("wnear22{:?}", wnear.id());
@@ -119,12 +122,12 @@ async fn test_deploy() -> anyhow::Result<()> {
                         "msg": "idk0what1i2must3write4here".to_string(),
                     })).
                     gas(parse_gas!("200 Tgas") as u64).
-                    deposit(1).
+                    deposit(ONE_YOCTO).
                     transact().
                     await?.
                     into_result()?;
-
-
+    println!("transfer: {:?}", transfer);
+    
     let balanse:u128 = imageboard 
                             .call("get_balance")
                             .view()

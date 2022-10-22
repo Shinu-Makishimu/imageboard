@@ -36,7 +36,7 @@ pub struct ImageBoard {
 #[ext_contract(ext_self)]
 pub trait ExtContract {
     #[result_serializer(borsh)]
-    fn finish_deposit(&self, token_id: AccountId, amount: U128, msg: String,) -> PromiseOrValue<U128>;
+    fn finish_deposit(&mut self, account_id: AccountId, amount: U128, msg: String,) -> PromiseOrValue<U128>; 
 
     #[result_serializer(borsh)]
     fn finish_withdraw(&self,) ->Promise;
@@ -79,7 +79,7 @@ impl ImageBoard{
             moderators: Vector::new(b"moderators".to_vec()),
             threads_count: 0,
             bans: Vector::new(b"bans".to_vec()),
-            balance: 0u128,
+            balance: 1u128,
         }
     }
 
@@ -325,13 +325,13 @@ impl ImageBoard{
     pub fn finish_deposit(
         // self balance will be changed after receiver call.
         &mut self,
-        #[serializer(borsh)] account_id: AccountId,
-        #[serializer(borsh)] amount: u128,
-        #[serializer(borsh)] msg: String,
+        #[serializer(borsh)]account_id: AccountId,
+        #[serializer(borsh)]amount: u128,
+        #[serializer(borsh)]msg: String,
     ) -> PromiseOrValue<u128> {
         log!("account {}, message {},", account_id, msg);
         self.balance += amount;
-        PromiseOrValue::Value(amount)
+        PromiseOrValue::Value(0)
     }
     
 }

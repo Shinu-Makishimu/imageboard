@@ -119,7 +119,7 @@ async fn test_deploy() -> anyhow::Result<()> {
                     args_json(json!({
                         "receiver_id": imageboard.id(),
                         "amount": parse_near!("420 N").to_string(),
-                        "msg": "idk0what1i2must3write4here".to_string(),
+                        "msg": "".to_string(),
                     })).
                     gas(parse_gas!("200 Tgas") as u64).
                     deposit(ONE_YOCTO).

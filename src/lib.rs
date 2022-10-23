@@ -32,18 +32,6 @@ pub struct ImageBoard {
 
 }
 
-
-#[ext_contract(ext_self)]
-pub trait ExtContract {
-    #[result_serializer(borsh)]
-    fn finish_deposit(&self, account_id: AccountId, amount: U128, msg: String,) -> PromiseOrValue<U128>; 
-
-    #[result_serializer(borsh)]
-    fn finish_withdraw(&self,) ->Promise;
-
-}
-
-
 impl Default for ImageBoard{
     fn default() -> Self {
         let owner = env::predecessor_account_id();

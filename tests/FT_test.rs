@@ -1,4 +1,5 @@
 
+use near_sdk::json_types::U128;
 use near_sdk::{log};
 use serde_json::json;
 use std::convert::TryInto;
@@ -12,6 +13,10 @@ use workspaces::BlockHeight;
 const WASM_FILEPATH: &str = "imageboard.wasm";
 
 const BLOCK_HEIGHT: BlockHeight = 50_000_000;
+
+
+mod common;
+
 
 async fn create_testname(
     owner: &Account,
@@ -83,6 +88,28 @@ async fn test_deploy() -> anyhow::Result<()> {
     //create worker and owner
     let worker: Worker<Sandbox> = workspaces::sandbox().await?;
     let owner: Account = worker.root_account()?;
+    
+    let subaccount: Account = owner.
+        create_subaccount("anon0").
+        initial_balance(near_units::parse_near!("5")).
+        transact().
+        await?.
+        into_result()?;
+
+
+    let subaccount1: Account = owner.
+        create_subaccount("anon1").
+        initial_balance(near_units::parse_near!("5")).
+        transact().
+        await?.
+        into_result()?;
+
+    let subaccount2: Account = owner.
+        create_subaccount("anon2").
+        initial_balance(near_units::parse_near!("5")).
+        transact().
+        await?.
+        into_result()?;
 
 
     let wnear: Contract = create_wnear(&owner, &worker).await?;
@@ -92,7 +119,7 @@ async fn test_deploy() -> anyhow::Result<()> {
         .call(wnear.id(), "storage_deposit")
         .args_json(json!({
             "account_id": imageboard.id(),
-            "registration_only": true,
+            "registration_only": true,  // in wnear it has'nt any effect
         }))
         .deposit(parse_near!("0.00125 N"))
         .transact()
@@ -127,6 +154,8 @@ async fn test_deploy() -> anyhow::Result<()> {
                     await?.
                     into_result()?;
     println!("transfer: {:?}", transfer);
+
+
     
     let balanse:u128 = imageboard 
                             .call("get_balance")
@@ -135,6 +164,76 @@ async fn test_deploy() -> anyhow::Result<()> {
                             .json()?;
     
     log!("balanse {:?}", balanse);
+
+    let suply_wnear:U128 = owner.
+                    call(wnear.id(), "ft_total_supply").
+                    gas(parse_gas!("200 Tgas") as u64).
+                    deposit(ONE_YOCTO).
+                    view().
+                    await?.
+                    json()?;
+
+    log!("suply_wnear {:?}", suply_wnear);
+
+    
+
+
+    subaccount.
+        call(imageboard.id(), "add_thread").
+        args_json(serde_json::json!({
+            "text": common::generate_random_string(),
+        })).
+        transact().
+        await?.
+        into_result()?;
+
+    log!("thr1");
+
+
+    subaccount1.
+        call(imageboard.id(),"add_thread").
+        args_json(serde_json::json!({
+            "text": common::generate_random_string()
+        })).
+        transact().
+        await?.
+        into_result()?;
+    log!("thr2");
+
+
+    subaccount2.
+        call(imageboard.id(),"add_thread").
+        args_json(serde_json::json!({
+            "text": common::generate_random_string()
+        })).
+        transact().
+        await?.
+        into_result()?;
+    log!("thr3");
+    
+        
+    let storage_1: U128 = imageboard.
+                                call("storage_deposits").
+                                args_json(serde_json::json!({
+                                    "account_id": subaccount2.id(),
+                                })).
+                                view().
+                                await?.
+                                json()?;
+    
+
+    log!("storage_1 {:?}", storage_1);
+
+    let balanse:u128 = imageboard 
+    .call("get_balance")
+    .view()
+    .await?
+    .json()?;
+
+log!("balanse {:?}", balanse);
+    
+
+
     Ok(())
 
 }

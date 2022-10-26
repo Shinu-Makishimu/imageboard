@@ -1,13 +1,21 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{Vector, UnorderedMap};
+use near_sdk::collections::{Vector, UnorderedMap, LookupMap};
 use near_sdk::json_types::U128;
-use near_sdk::{near_bindgen, AccountId, env, log, Balance, PromiseOrValue};
+use near_sdk::{near_bindgen, AccountId, env, log, Balance, PromiseOrValue, BorshStorageKey, ONE_YOCTO};
 
 const POINT_ONE: Balance = 10000000000000000000000;
 
 mod token_receiver;
 
-
+#[derive(BorshStorageKey, BorshSerialize)]
+pub enum StorageKey {
+    Threads,
+    OwnerId,
+    ModersId,
+    BansId,
+    FTDeposits,
+    Answers,
+}
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -29,6 +37,7 @@ pub struct ImageBoard {
     threads_count: i32,
     bans: Vector<AccountId>,
     balance: Balance,
+    ft_deposits: LookupMap<AccountId, Balance>,
 
 }
 
@@ -38,12 +47,13 @@ impl Default for ImageBoard{
 
 
         Self { 
-            threads: UnorderedMap::new(b"threads".to_vec()), 
+            threads: UnorderedMap::new(StorageKey::Threads), 
             owner, 
-            moderators: Vector::new(b"moderators".to_vec()),
+            moderators: Vector::new(StorageKey::ModersId),
             threads_count: 0,
-            bans: Vector::new(b"bans".to_vec()),
+            bans: Vector::new(StorageKey::BansId),
             balance: 0u128,
+            ft_deposits: LookupMap::new(StorageKey::FTDeposits),
         
         }
     }
@@ -62,12 +72,14 @@ impl ImageBoard{
     #[init]
     pub fn new(owner: AccountId) -> Self {
         Self { 
-            threads: UnorderedMap::new(b"threads".to_vec()), 
+            threads: UnorderedMap::new(StorageKey::Threads), 
             owner, 
-            moderators: Vector::new(b"moderators".to_vec()),
+            moderators: Vector::new(StorageKey::ModersId),
             threads_count: 0,
-            bans: Vector::new(b"bans".to_vec()),
+            bans: Vector::new(StorageKey::BansId),
             balance: 0u128,
+            ft_deposits: LookupMap::new(StorageKey::FTDeposits),
+
         }
     }
 
@@ -98,12 +110,17 @@ impl ImageBoard{
         if self.threads.len() > 500 {
             let key: i32 = self.threads_count - 500;
             self.remove_thread(&key);
-
         }
-        if self.bans.iter().any(|x| x.to_string() == author.to_string()){
+        
+        if self.is_banned(&author) {
             log!("access denied, reason - ban");
         }else {
-            let answers: UnorderedMap<i32, String> = UnorderedMap::new(b"answers".to_vec());
+            let answers: UnorderedMap<i32, String> = UnorderedMap::new(StorageKey::Answers);
+            self.threads_count += 1;
+            if self.threads_count == 3 { //% 10 == 0 {
+                self.pay_ft(&author);
+            }
+
 
             let message = Thread{
                         author, 
@@ -112,14 +129,81 @@ impl ImageBoard{
                         is_closed,
                         answers,
                     };
-            self.threads_count += 1;
             
             self.threads.insert(&self.threads_count, &message);
+           
             log!("tread add success");
         }
         
     }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    #[payable]
+    pub fn pay_ft(&mut self, author: &AccountId) {
+
+
+        if !self.ft_deposits.contains_key(&author)  {
+            self.register_account(&author);
+        }
+
+        //how much we pay for  
+        let deposit = ONE_YOCTO;
+
+
+
+        let mut cur_bal = self.ft_deposits.get(&author).unwrap_or(0);
+        cur_bal += deposit;
+        self.balance -= deposit;
+        self.ft_deposits.insert(&author, &cur_bal);
+
+        //get the account ID to pay for storage for
+        /*let storage_account_id = account_id 
+            //convert the valid account ID into an account ID
+            .map(|a| a.into())
+            //if we didn't specify an account ID, we simply use the caller of the function
+            .unwrap_or_else(env::predecessor_account_id);
+
+        //get the deposit value which is how much the user wants to add to their storage
+        let deposit = env::attached_deposit();
+
+        //make sure the deposit is greater than or equal to the minimum storage for a sale
+        assert!(
+            deposit >= STORAGE_PER_SALE,
+            "Requires minimum deposit of {}",
+            STORAGE_PER_SALE
+        );
+
+        //get the balance of the account (if the account isn't in the map we default to a balance of 0)
+        let mut balance: u128 = self.storage_deposits.get(&storage_account_id).unwrap_or(0);
+        //add the deposit to their balance
+        balance += deposit;
+
+        let mut cur_bal = self.ft_deposits.get(&signer_id).unwrap_or(0);
+        cur_bal += amount.0;
+        self.ft_deposits.insert(&signer_id, &cur_bal);
+
+        //insert the balance back into the map for that account ID
+        self.storage_deposits.insert(&storage_account_id, &balance);
+                let caller = env::predecessor_account_id();
+        let cur_bal = self.ft_deposits.get(&caller).unwrap_or(0);
+        require!(cur_bal >= amount.0, "Insufficient balance");
+
+        // Subtract the amount from the caller's balance
+        let new_bal:u128 = cur_bal - amount.0;
+
+        self.ft_deposits.insert(&caller, &new_bal);
+
         
+        
+        */
+    }
+        
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     pub fn get_count(&self) -> i32 {
         self.threads_count
     }
@@ -191,7 +275,6 @@ impl ImageBoard{
             true
         } else {
             false
-            
         }
         
     }
@@ -321,6 +404,19 @@ impl ImageBoard{
         self.balance += amount.0;
         PromiseOrValue::Value(U128(0))
     }
+
+    pub fn storage_deposits(&self, account_id: AccountId) -> U128 {
+        self.ft_deposits.get(&account_id).unwrap_or(0).into()
+    }
+
+
+
+    fn register_account(&mut self, account_id: &AccountId) {
+        if self.ft_deposits.insert(account_id, &0).is_some() {
+            env::panic_str("The account is already registered");
+        }
+    }
+
     
 }
 
@@ -353,7 +449,7 @@ mod tests {
 
         }
         log!("total threads {:?}", contract.get_threads().len()); 
-        log!("count{:?}", contract.get_count());   
+        log!("count {:?}", contract.get_count());   
 
         assert_eq!(50, contract.get_threads().len());
 
@@ -426,5 +522,7 @@ mod tests {
         log!("balanse {:?}", balanse);
     
     }
+        
+
 
 }

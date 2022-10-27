@@ -230,7 +230,7 @@ async fn test_deploy() -> anyhow::Result<()> {
     .await?
     .json()?;
 
-log!("balanse {:?}", balanse);
+    log!("balanse {:?}", balanse);
     
 
 

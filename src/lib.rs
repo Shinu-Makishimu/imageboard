@@ -157,46 +157,6 @@ impl ImageBoard{
         self.balance -= deposit;
         self.ft_deposits.insert(&author, &cur_bal);
 
-        //get the account ID to pay for storage for
-        /*let storage_account_id = account_id 
-            //convert the valid account ID into an account ID
-            .map(|a| a.into())
-            //if we didn't specify an account ID, we simply use the caller of the function
-            .unwrap_or_else(env::predecessor_account_id);
-
-        //get the deposit value which is how much the user wants to add to their storage
-        let deposit = env::attached_deposit();
-
-        //make sure the deposit is greater than or equal to the minimum storage for a sale
-        assert!(
-            deposit >= STORAGE_PER_SALE,
-            "Requires minimum deposit of {}",
-            STORAGE_PER_SALE
-        );
-
-        //get the balance of the account (if the account isn't in the map we default to a balance of 0)
-        let mut balance: u128 = self.storage_deposits.get(&storage_account_id).unwrap_or(0);
-        //add the deposit to their balance
-        balance += deposit;
-
-        let mut cur_bal = self.ft_deposits.get(&signer_id).unwrap_or(0);
-        cur_bal += amount.0;
-        self.ft_deposits.insert(&signer_id, &cur_bal);
-
-        //insert the balance back into the map for that account ID
-        self.storage_deposits.insert(&storage_account_id, &balance);
-                let caller = env::predecessor_account_id();
-        let cur_bal = self.ft_deposits.get(&caller).unwrap_or(0);
-        require!(cur_bal >= amount.0, "Insufficient balance");
-
-        // Subtract the amount from the caller's balance
-        let new_bal:u128 = cur_bal - amount.0;
-
-        self.ft_deposits.insert(&caller, &new_bal);
-
-        
-        
-        */
     }
         
 

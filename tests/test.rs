@@ -1,27 +1,20 @@
 use near_sdk::{log};
-//use near_units::parse_near;
 use serde_json;
 use workspaces::{AccountId, Account, Contract, Worker, network::Sandbox};
 
 mod common;
 
-
 const WASM_FILEPATH: &str = "imageboard.wasm";
 
-//const BLOCK_HEIGHT: BlockHeight = 102001114;
-
-
+//Testing basic methods
 #[tokio::test]
 async fn deploy() -> anyhow::Result<()> {
     let worker: Worker<Sandbox> = workspaces::sandbox().await?;
     let wasm: Vec<u8> = std::fs::read(WASM_FILEPATH).unwrap();
     let contract: Contract = worker.dev_deploy(&wasm).await?;
-    
     let account: Account = worker.dev_create_account().await?;
     let account2: Account = worker.dev_create_account().await?;
     let account3: Account = worker.dev_create_account().await?;
-    
-    
 
     let subaccount: Account = account.
                                 create_subaccount("lahtabot1").
@@ -29,7 +22,6 @@ async fn deploy() -> anyhow::Result<()> {
                                 transact().
                                 await?.
                                 into_result()?;
-
 
     let subaccount2: Account = account.
                                 create_subaccount("anon").
@@ -58,9 +50,6 @@ async fn deploy() -> anyhow::Result<()> {
 
     assert_eq!(&owner_id, account.id());
 
-
-
-    //////////////////////////////////////////////////////
     let random_thread_string: String = common::generate_random_string();
 
     account.
@@ -71,7 +60,6 @@ async fn deploy() -> anyhow::Result<()> {
         transact().
         await?.
         into_result()?;
-
     
     let number: i32 = 1 ;
     let thread: String = contract.
@@ -85,9 +73,6 @@ async fn deploy() -> anyhow::Result<()> {
     log!("from contract: {:?}", thread);
 
     assert_eq!(random_thread_string, thread);
-
-
-//////////////////////////////////////////////////////
 
     account2.
         call(contract.id(),"add_thread").
@@ -116,7 +101,6 @@ async fn deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
 
-    
     let thread_count:i32 = contract.
                         call("get_count").
                         view().
@@ -131,8 +115,6 @@ async fn deploy() -> anyhow::Result<()> {
                             await?.
                             json()?;
     log!("all threads: {:?}", all_threads);
-
-//////////////////////////////////////////////////////
 
     let random_answer_string: String = common::generate_random_string();
 
@@ -160,7 +142,6 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("add answ. status: {:?}", check2.json::<String>()?);
 
-
     let answer: String = contract.
             call("get_thread_answers").
             args_json(serde_json::json!({
@@ -172,7 +153,6 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("from thread answ = {:?}", answer);
 
-/////////////////////////////////////////////////////  
     log!("{:?}", subaccount2.id());
 
     let add_moder = account.
@@ -194,7 +174,6 @@ async fn deploy() -> anyhow::Result<()> {
 
     log!("list_moders: {:?}", list_mods);
 
-            
     account.
             call(contract.id(), "ban").
             args_json(serde_json::json!({
@@ -219,10 +198,8 @@ async fn deploy() -> anyhow::Result<()> {
         transact().
         await?.
         into_result()?;
-
     
         log!("check: {:?}", check);
-
 
     Ok(())
 

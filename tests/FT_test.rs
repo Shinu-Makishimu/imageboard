@@ -1,24 +1,17 @@
-
-use near_sdk::json_types::U128;
-use near_sdk::{log};
+use near_sdk::{log, ONE_YOCTO, json_types::U128};
 use serde_json::json;
 use std::convert::TryInto;
-use near_sdk::ONE_YOCTO;
 use anyhow::Ok;
 use near_units::{parse_gas, parse_near};
 use workspaces::network::Sandbox;
-use workspaces::{Account, AccountId, Contract, Worker, DevNetwork};
-use workspaces::BlockHeight;
+use workspaces::{Account, AccountId, Contract, Worker, DevNetwork, BlockHeight};
 
 const WASM_FILEPATH: &str = "imageboard.wasm";
-
 const BLOCK_HEIGHT: BlockHeight = 50_000_000;
-
 
 mod common;
 
-
-async fn create_testname(
+async fn create_ib(
     owner: &Account,
     worker: &Worker<impl DevNetwork>,
 ) -> anyhow::Result<Contract> {
@@ -37,7 +30,6 @@ async fn create_testname(
 
     Ok(gp)
 }
-
 
 async fn create_wnear(
         owner: &Account, 
@@ -81,8 +73,6 @@ async fn create_wnear(
 }
 
 
-
-
 #[tokio::test]
 async fn test_deploy() -> anyhow::Result<()> {
     //create worker and owner
@@ -95,7 +85,6 @@ async fn test_deploy() -> anyhow::Result<()> {
         transact().
         await?.
         into_result()?;
-
 
     let subaccount1: Account = owner.
         create_subaccount("anon1").
@@ -111,9 +100,8 @@ async fn test_deploy() -> anyhow::Result<()> {
         await?.
         into_result()?;
 
-
     let wnear: Contract = create_wnear(&owner, &worker).await?;
-    let imageboard: Contract = create_testname(&owner, &worker).await?;
+    let imageboard: Contract = create_ib(&owner, &worker).await?;
 
     let register_result = owner
         .call(wnear.id(), "storage_deposit")
@@ -128,7 +116,6 @@ async fn test_deploy() -> anyhow::Result<()> {
 
     log!("register result {:?}", register_result);
 
-
     let owner_id: AccountId = imageboard 
         .call("get_owner")
         .view()
@@ -138,7 +125,6 @@ async fn test_deploy() -> anyhow::Result<()> {
     log!("from contract: {:?}", owner_id);
     log!("from account {:?}", owner.id());
     log!("imageboard id {:?}", imageboard.id());
-
 
     log!("wnear22{:?}", wnear.id());
     let transfer = owner.
@@ -155,8 +141,6 @@ async fn test_deploy() -> anyhow::Result<()> {
                     into_result()?;
     println!("transfer: {:?}", transfer);
 
-
-    
     let balanse:u128 = imageboard 
                             .call("get_balance")
                             .view()

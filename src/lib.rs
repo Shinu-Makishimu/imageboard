@@ -7,6 +7,7 @@ const POINT_ONE: Balance = 10000000000000000000000;
 
 mod token_receiver;
 
+
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
     Threads,
@@ -16,6 +17,7 @@ pub enum StorageKey {
     FTDeposits,
     Answers,
 }
+
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -41,24 +43,23 @@ pub struct ImageBoard {
 
 }
 
+
 impl Default for ImageBoard{
     fn default() -> Self {
         let owner = env::predecessor_account_id();
 
-
         Self { 
-            threads: UnorderedMap::new(StorageKey::Threads), 
-            owner, 
-            moderators: Vector::new(StorageKey::ModersId),
-            threads_count: 0,
-            bans: Vector::new(StorageKey::BansId),
-            balance: 0u128,
-            ft_deposits: LookupMap::new(StorageKey::FTDeposits),
+            threads: UnorderedMap::new(StorageKey::Threads),          //unordered map with key: thread number and struct Thread
+            owner,                                                           //Account id owener. 
+            moderators: Vector::new(StorageKey::ModersId),           //Vector with mderators Account ids
+            threads_count: 0,                                               // Thread count
+            bans: Vector::new(StorageKey::BansId),                  //Vector with bans Account ids
+            balance: 0u128,                                                 // Fungible token balance
+            ft_deposits: LookupMap::new(StorageKey::FTDeposits), // LookupMap with fungible token balance
         
         }
     }
 }
-
 
 
 #[near_bindgen]
@@ -94,15 +95,16 @@ impl ImageBoard{
     pub fn get_owner(&self) -> AccountId {
         self.owner.clone()
     }
+
+    // Add thread to the Unordered Map.  Imageboard can have only 500 threads. When the number of threads is more than 500, the first thread will be delete.
+    // is_closed: bool. false -default. if thrue - thread is closed. only owner or moderators can close, or after 500 answers
+    // text: string. text sent by the author
+    // author: AccountId. who open thread.
+    // answers: UnorderedMap with key: number of answers and message:string. When the number of answers is more than 500, thread will be closed (is_closed = thrue) 
+    // premium: if author attached some deposit, the thread is considered premium. Passcode analogue.
+    // adding pictures in development
     #[payable]
     pub fn add_thread(&mut self, text: String) {
-        // Add thread to the Unordered Map.  Imageboard can have only 500 threads. When the number of threads is more than 500, the first thread will be delete.
-        // is_closed: bool. false -default. if thrue - thread is closed. only owner or moderators can close, or after 500 answers
-        // text: string. text sent by the author
-        // author: AccountId. who open thread.
-        // answers: UnorderedMap with key: number of answers and message:string. When the number of answers is more than 500, thread will be closed (is_closed = thrue) 
-        // premium: if author attached some deposit, the thread is considered premium. Passcode analogue.
-        // adding pictures in development
         let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
@@ -114,7 +116,7 @@ impl ImageBoard{
         
         if self.is_banned(&author) {
             log!("access denied, reason - ban");
-        }else {
+        } else {
             let answers: UnorderedMap<i32, String> = UnorderedMap::new(StorageKey::Answers);
             self.threads_count += 1;
             if self.threads_count == 3 { //% 10 == 0 {
@@ -137,11 +139,8 @@ impl ImageBoard{
         
     }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     #[payable]
     pub fn pay_ft(&mut self, author: &AccountId) {
-
 
         if !self.ft_deposits.contains_key(&author)  {
             self.register_account(&author);
@@ -150,19 +149,12 @@ impl ImageBoard{
         //how much we pay for  
         let deposit = ONE_YOCTO;
 
-
-
         let mut cur_bal = self.ft_deposits.get(&author).unwrap_or(0);
         cur_bal += deposit;
         self.balance -= deposit;
         self.ft_deposits.insert(&author, &cur_bal);
 
     }
-        
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
     pub fn get_count(&self) -> i32 {
         self.threads_count
@@ -181,13 +173,13 @@ impl ImageBoard{
     }
 
     pub fn get_the_thread(&self, number: i32) -> String {
-        //self.threads.get(&number).unwrap().text.clone()
         match self.threads.get(&number) {
             Some(thread) => thread.text.clone(),
             None => "thread not found".to_string(),
         }
     }
 
+    //Only owner or moderator can remove thread
     pub fn remove_thread(&mut self, key: &i32) {
         let author = env::predecessor_account_id();  
 
@@ -195,14 +187,13 @@ impl ImageBoard{
             match self.threads.remove(&key) {
                 Some(_result) => { log!("Removing thread {:?} succes", key);},
                 None => { log!("Removing thread {:?} failed", key); },
-        }
-    
+            }
         } else {
             log!("permission denied");
         }
-
     }
 
+    //Only owner or moderator can ban thread
     pub fn ban_thread(&mut self, number: i32) {
         let author = env::predecessor_account_id();  
 
@@ -217,7 +208,7 @@ impl ImageBoard{
 
     }
 
-
+    //Only owner can add moder
     pub fn add_moder(&mut self, user_id: AccountId) -> String{
         let call_account = env::predecessor_account_id();
         log!("{:?}",call_account);
@@ -243,6 +234,7 @@ impl ImageBoard{
         self.moderators.iter().map(|x| x.to_string()).collect()
     }
 
+    //Only owner can delete moder
     pub fn delete_moder(&mut self, user_id:AccountId) -> String {
         let call_account = env::predecessor_account_id();
         if call_account.to_string() == self.owner.to_string() {
@@ -259,10 +251,11 @@ impl ImageBoard{
 
     }
 
+    //function to add a reply to a thread.
+    //To add an answer, you need a key (thread number).
+    //There are two checks: the thread is closed and account is banned.
     pub fn add_answers(&mut self, thread_number: i32, text: String) -> String {
-        //function to add a reply to a thread.
-        //To add an answer, you need a key (thread number).
-        //There are two checks: the thread is closed and account is banned.
+
         let mut thread: Thread =  self.threads.get(&thread_number).unwrap();
         let author: AccountId = env::predecessor_account_id();  //?? should i use signer_account_id insted?
 
@@ -309,18 +302,15 @@ impl ImageBoard{
             .collect()
     }
 
-
+    //only moderator or owner can ban users
     pub fn ban(&mut self, user: &AccountId) {
         let author = env::predecessor_account_id();  
         if (self.is_moder(&author) ) | (&self.owner.to_string() == &author.to_string())  {
             self.bans.push(&user);
             log!("ban");
-
         } else {
             log!("ban fail");
-
         }
-
     }
 
     pub fn is_banned(&self, name: &AccountId) -> bool {
@@ -333,9 +323,7 @@ impl ImageBoard{
 
     pub fn get_bans(&self) -> Vec<String> {
         self.bans.iter().map(|x| x.to_string()).collect()
-    
     }
-
 
     pub fn remove_ban (&mut self, user: AccountId) {
         let author = env::predecessor_account_id();  
@@ -369,15 +357,12 @@ impl ImageBoard{
         self.ft_deposits.get(&account_id).unwrap_or(0).into()
     }
 
-
-
+    //private method for register account in ft deposit for amount 
     fn register_account(&mut self, account_id: &AccountId) {
         if self.ft_deposits.insert(account_id, &0).is_some() {
             env::panic_str("The account is already registered");
         }
     }
-
-    
 }
 
 
@@ -425,7 +410,6 @@ mod tests {
         contract.remove_thread(&1);
         contract.remove_thread(&1);
         assert_eq!(49, contract.get_threads().len());
-
     }
 
     #[test]
@@ -471,8 +455,6 @@ mod tests {
         let _ban = contract.ban(&bailey);
         let ban_list = contract.get_bans();
         log!("ban list  {:?}", ban_list);
-
-
     }
 
     #[test]
@@ -480,7 +462,6 @@ mod tests {
         let contract: ImageBoard = ImageBoard::default();
         let balanse: u128 = contract.get_balance();
         log!("balanse {:?}", balanse);
-    
     }
         
 

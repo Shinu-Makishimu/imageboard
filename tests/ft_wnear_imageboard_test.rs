@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+use std::convert::TryInto;
 use near_sdk::log;
 use near_units::{parse_gas, parse_near};
 use workspaces::network::Sandbox;
@@ -94,7 +94,7 @@ async fn create_ref(owner: &Account, worker: &Worker<Sandbox>) -> anyhow::Result
     owner
         .call(ref_finance.id(), "storage_deposit")
         .args_json(serde_json::json!({}))
-        .deposit(parse_near!("30 mN"))
+        .deposit(parse_near!("30 N"))
         .transact()
         .await?
         .into_result()?;
@@ -162,6 +162,44 @@ async fn create_pool_with_liquidity(
 
     Ok(pool_id)
 }
+async fn create_wnear(owner: &Account, worker: &Worker<Sandbox>) -> anyhow::Result<Contract> {
+    let mainnet = workspaces::mainnet_archival().await?;
+    let wnear_id: AccountId = "wrap.near".to_string().try_into()?;
+    let wnear = worker
+        .import_contract(&wnear_id, &mainnet)
+        .block_height(BLOCK_HEIGHT)
+        .transact()
+        .await?;
+
+    owner
+        .call(wnear.id(), "new")
+        .args_json(serde_json::json!({
+            "owner_id": owner.id(),
+            "total_supply": parse_near!("1,000,000,000 N"),
+        }))
+        .transact()
+        .await?
+        .into_result()?;
+
+    owner
+        .call(wnear.id(), "storage_deposit")
+        .args_json(serde_json::json!({}))
+        .deposit(parse_near!("0.0125 N"))
+        .transact()
+        .await?
+        .into_result()?;
+
+    owner
+        .call(wnear.id(), "near_deposit")
+        .deposit(parse_near!("200 N"))
+        .transact()
+        .await?
+        .into_result()?;
+
+    Ok(wnear)
+}
+
+
 
 async fn deposit_tokens(
     owner: &Account,
@@ -204,11 +242,11 @@ async fn test_deploy() -> anyhow::Result<()> {
     let main_owner: Account = worker.root_account()?;
     
     let owner: Account = main_owner.
-    create_subaccount("anon0").
-    initial_balance(near_units::parse_near!("500")).
-    transact().
-    await?.
-    into_result()?;
+        create_subaccount("anon").
+        initial_balance(near_units::parse_near!("500 N")).
+        transact().
+        await?.
+        into_result()?;
 
 
     // Deploy relevant contracts such as FT, and Ref-Finance
@@ -222,15 +260,16 @@ async fn test_deploy() -> anyhow::Result<()> {
     let ib: Contract = create_imageboard(&owner, &worker).await?;
     log!("ib");
 
-    // create a pool with liquidity and deposit/transfer tokens into
-    // them from our contracts such as FT.
-
+    let wnear = create_wnear(&owner, &worker).await?;
+    log!("wnear");
 
     let pool_id = create_pool_with_liquidity(
         &owner,
         &ref_finance,
         maplit::hashmap! {
             ft.id() => parse_near!("5 N"),
+            wnear.id() => parse_near!("10 N"),
+
         },
     )
     .await?;
@@ -247,6 +286,8 @@ async fn test_deploy() -> anyhow::Result<()> {
         &ref_finance,
         maplit::hashmap! {
             ft.id() => parse_near!("100 N"),
+            wnear.id() => parse_near!("100 N"),
+
         },
     )
     .await?;
@@ -267,6 +308,22 @@ async fn test_deploy() -> anyhow::Result<()> {
         .await?
         .json()?;
     log!("Current FT deposit: {}", ft_deposit);
+
+let wnear_deposit: String = worker
+    .view(
+        ref_finance.id(),
+        "get_deposit",
+        serde_json::json!({
+            "account_id": owner.id(),
+            "token_id": wnear.id(),
+        })
+        .to_string()
+        .into_bytes(),
+    )
+    .await?
+    .json()?;
+
+println!("Current WNear deposit: {}", wnear_deposit);
 
     //assert_eq!(ft_deposit, parse_near!("100 N").to_string());
 

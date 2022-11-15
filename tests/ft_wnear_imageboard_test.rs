@@ -161,6 +161,8 @@ async fn create_pool_with_liquidity(
     log!("5");
 
     Ok(pool_id)
+
+    
 }
 async fn create_wnear(owner: &Account, worker: &Worker<Sandbox>) -> anyhow::Result<Contract> {
     let mainnet = workspaces::mainnet_archival().await?;

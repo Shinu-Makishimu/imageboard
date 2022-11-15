@@ -2,14 +2,7 @@ use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
 use near_sdk::AccountId;
 use near_sdk::json_types::U128;
 
-
-
-
 use crate::*;
-
-
-
-
 
 #[near_bindgen]
 impl FungibleTokenReceiver for ImageBoard {

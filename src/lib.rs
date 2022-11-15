@@ -1,11 +1,37 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{Vector, UnorderedMap, LookupMap};
 use near_sdk::json_types::U128;
-use near_sdk::{near_bindgen, AccountId, env, log, Balance, PromiseOrValue, BorshStorageKey, ONE_YOCTO};
+use near_sdk::{near_bindgen, AccountId, env, log, Balance, PromiseOrValue, BorshStorageKey, ONE_YOCTO, ext_contract};
+
 
 const POINT_ONE: Balance = 10000000000000000000000;
 
 mod token_receiver;
+
+
+#[ext_contract(ext_token)]
+pub trait ExtToken {
+    fn ft_transfer(
+        &mut self,
+        receiver_id: AccountId,
+        amount: U128,
+        memo: Option<String>,
+    ) -> PromiseOrValue<U128>;
+}
+
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Invoice {
+    pub invoice_id: String,
+    pub receiver: AccountId,
+    pub sender: AccountId,
+    pub tokens: Vec<AccountId>,
+    pub amount: Vec<Balance>,
+    pub is_paid: bool,
+    pub is_withdrawn: bool,
+}
+
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
@@ -38,7 +64,7 @@ pub struct ImageBoard {
     bans: Vector<AccountId>,
     balance: Balance,
     ft_deposits: LookupMap<AccountId, Balance>,
-
+    ft_id: AccountId,
 }
 
 impl Default for ImageBoard{
@@ -54,7 +80,7 @@ impl Default for ImageBoard{
             bans: Vector::new(StorageKey::BansId),
             balance: 0u128,
             ft_deposits: LookupMap::new(StorageKey::FTDeposits),
-        
+            ft_id,
         }
     }
 }
@@ -70,7 +96,7 @@ impl ImageBoard{
     }
 
     #[init]
-    pub fn new(owner: AccountId) -> Self {
+    pub fn new(owner: AccountId, ft_id: AccountId) -> Self {
         Self { 
             threads: UnorderedMap::new(StorageKey::Threads), 
             owner, 
@@ -79,7 +105,7 @@ impl ImageBoard{
             bans: Vector::new(StorageKey::BansId),
             balance: 0u128,
             ft_deposits: LookupMap::new(StorageKey::FTDeposits),
-
+            ft_id,
         }
     }
 
@@ -94,15 +120,17 @@ impl ImageBoard{
     pub fn get_owner(&self) -> AccountId {
         self.owner.clone()
     }
+
+
+    // Add thread to the Unordered Map.  Imageboard can have only 500 threads. When the number of threads is more than 500, the first thread will be delete.
+    // is_closed: bool. false -default. if thrue - thread is closed. only owner or moderators can close, or after 500 answers
+    // text: string. text sent by the author
+    // author: AccountId. who open thread.
+    // answers: UnorderedMap with key: number of answers and message:string. When the number of answers is more than 500, thread will be closed (is_closed = thrue) 
+    // premium: if author attached some deposit, the thread is considered premium. Passcode analogue.
+    // adding pictures in development
     #[payable]
     pub fn add_thread(&mut self, text: String) {
-        // Add thread to the Unordered Map.  Imageboard can have only 500 threads. When the number of threads is more than 500, the first thread will be delete.
-        // is_closed: bool. false -default. if thrue - thread is closed. only owner or moderators can close, or after 500 answers
-        // text: string. text sent by the author
-        // author: AccountId. who open thread.
-        // answers: UnorderedMap with key: number of answers and message:string. When the number of answers is more than 500, thread will be closed (is_closed = thrue) 
-        // premium: if author attached some deposit, the thread is considered premium. Passcode analogue.
-        // adding pictures in development
         let premium = env::attached_deposit() >= POINT_ONE;
         let is_closed: bool = false;
         let author = env::predecessor_account_id();
@@ -137,12 +165,10 @@ impl ImageBoard{
         
     }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     #[payable]
-    pub fn pay_ft(&mut self, author: &AccountId) {
+    pub fn pay_ft(&mut self, account: &AccountId) {
 
-
+/*
         if !self.ft_deposits.contains_key(&author)  {
             self.register_account(&author);
         }
@@ -155,7 +181,23 @@ impl ImageBoard{
         let mut cur_bal = self.ft_deposits.get(&author).unwrap_or(0);
         cur_bal += deposit;
         self.balance -= deposit;
-        self.ft_deposits.insert(&author, &cur_bal);
+        self.ft_deposits.insert(&author, &cur_bal);*/
+        let amount = ONE_YOCTO;
+        ext_token::ext(self.ft_id.clone())
+
+                .with_attached_deposit(ONE_YOCTO)
+
+                .with_static_gas(CALLBACK_GAS)
+
+                .ft_transfer(account_id.clone(), amount, None)
+
+                .then(Self::ext(env::current_account_id())
+
+                    .with_static_gas(CALLBACK_GAS)
+
+                    .on_transfer_from_balance(account.account_id.clone(), amount, account_id.clone(), ft_id.clone())
+
+                );
 
     }
         
